@@ -1,22 +1,34 @@
-# StudyFlow
+# SemReady
 
-A lightweight study planner for subjects, phases, topic checklists, daily focus, session notes, backups, and screenshot-to-plan import.
+A lightweight semester study planner for university students. Organise subjects, phases, topics, daily focus, study notes, and exam preparation; export backups; and turn syllabus screenshots into editable plans.
 
 ## Features
 - Manage subjects, phases, and topics
 - Track completed topics and overall progress
 - Build a daily focus list and write session notes
 - Export/import a JSON backup
-- Import study-plan screenshots and review the extracted structure before saving
+- Import study-plan screenshots and review extracted structure before saving
 - Local-first plan storage: each browser profile has its own plans
-- Terms, privacy policy, and SVG favicon
+- Privacy policy, terms, and SVG favicon
 
-## Custom domain
-After the first successful deployment, open Vercel → Project → Settings → Domains, add a domain you own, then follow the DNS records Vercel provides at your domain registrar. Vercel assigns HTTPS after DNS verification. You must own or purchase the domain; this project cannot register it for you. You can use the free `*.vercel.app` address until then.
+## Deploy on Vercel
+1. Push the project files to your GitHub repository.
+2. Import or redeploy the repository in Vercel. The project uses a Vercel serverless function at `api/parse-plan.js`.
+3. In Vercel → Project → Settings → Environment Variables, add `GEMINI_API_KEY` with your own Gemini API key for screenshot import. Optionally set `GEMINI_MODEL`.
+4. Redeploy after changing environment variables.
+
+Never commit `.env` or paste API keys into source code. `.env.example` is a safe template for local setup.
+
+## Local development
+- Install Node.js (LTS).
+- Run `npm install`.
+- Copy `.env.example` to `.env` and add your own `GEMINI_API_KEY`.
+- Run `npm start` for the Express local API.
+- For production hosting, Vercel uses `api/parse-plan.js`; set the API key in Vercel Environment Variables.
 
 ## Privacy and limitations
 - Study plans stay in browser local storage and do not sync across devices.
-- Screenshot import sends selected images to the server and then to Google's Gemini AI service for extraction. The provider is not named in the app's main interface, but is disclosed in the Privacy Policy.
-- Online screenshot import is limited to three images at a time, each under 1.5 MB, to stay within serverless request limits.
-- Screenshot import consumes the project's API quota. Share the link with people you trust, monitor usage, and rotate the API key if it is ever exposed.
+- Screenshot import sends selected images to Google's Gemini AI service for extraction. Avoid uploading sensitive or confidential material.
+- Online screenshot import is limited to three images at a time, each under 900 KB.
+- Screenshot import consumes the project's API quota. Monitor usage and rotate the API key if it is ever exposed.
 - This project does not currently have user accounts, cross-device sync, or a database.

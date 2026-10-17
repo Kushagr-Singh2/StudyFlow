@@ -1,5 +1,4 @@
-
 User-agent: *
 Allow: /
 
-Sitemap: https://get-studyflow.vercel.app/sitemap.xml
+Sitemap: https://getsemready.vercel.app/sitemap.xml

@@ -35,4 +35,4 @@ app.post("/api/parse-plan", async (req, res) => {
     return res.status(500).json({ error: "Could not process screenshots. Check your connection or try again later." });
   }
 });
-app.listen(port, () => console.log(`StudyFlow local API running on port ${port}`));
+app.listen(port, () => console.log(`SemReady local API running on port ${port}`));

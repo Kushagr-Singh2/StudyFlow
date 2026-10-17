@@ -1,12 +1,6 @@
-
+<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://get-studyflow.vercel.app/</loc>
-  </url>
-  <url>
-    <loc>https://get-studyflow.vercel.app/privacy.html</loc>
-  </url>
-  <url>
-    <loc>https://get-studyflow.vercel.app/terms.html</loc>
-  </url>
+  <url><loc>https://getsemready.vercel.app/</loc></url>
+  <url><loc>https://getsemready.vercel.app/privacy.html</loc></url>
+  <url><loc>https://getsemready.vercel.app/terms.html</loc></url>
 </urlset>
