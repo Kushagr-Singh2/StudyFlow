@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyFlow — Study Planner</title>
+  <meta name="description" content="A calm, simple space to organise subjects, break plans into topics, and track your study progress." />
+  <meta name="theme-color" content="#6c5ce7" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">S</div><div><strong>StudyFlow</strong><small>Plan less. Learn more.</small></div></div>
+      <nav>
+        <button class="nav-item active" data-view="dashboard"><span>▦</span> Dashboard</button>
+        <button class="nav-item" data-view="subjects"><span>☷</span> Subjects & topics</button>
+        <button class="nav-item" data-view="today"><span>✓</span> Today's focus</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="save-status"><span class="status-dot"></span><span>Saved on this device</span></div>
+        <p>Your plans stay in this browser. Export a backup before clearing browser data.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="todayLabel">YOUR LEARNING SPACE</p>
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="top-actions">
+          <button class="button ghost" id="importPlanBtn">✧ Import screenshot</button>
+          <button class="button ghost" id="exportBtn">Export backup</button>
+          <label class="button ghost import-button">Import backup<input type="file" id="importInput" accept="application/json,.json" hidden></label>
+          <button class="button primary" id="addSubjectTop">＋ Add subject</button>
+        </div>
+      </header>
+
+      <section class="view active" id="dashboardView">
+        <div class="welcome-card">
+          <div>
+            <p class="eyebrow light">YOUR NEXT STEP</p>
+            <h2>Small sessions.<br>Real progress.</h2>
+            <p>Organise any course into phases, topics and small actions. Tick things off as you learn them.</p>
+            <button class="button white" id="startTodayBtn">Open today's focus <span>→</span></button>
+          </div>
+          <div class="welcome-art" aria-hidden="true">
+            <div class="art-ring ring-one"></div><div class="art-ring ring-two"></div>
+            <div class="art-card"><span>✓</span><div><b>One topic at a time</b><small>Learn · Practise · Revise</small></div></div>
+            <div class="art-dot"></div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card"><span class="stat-icon violet">▤</span><div><p>Subjects</p><strong id="statSubjects">0</strong></div></div>
+          <div class="stat-card"><span class="stat-icon green">✓</span><div><p>Topics completed</p><strong id="statCompleted">0 <small>/ 0</small></strong></div></div>
+          <div class="stat-card"><span class="stat-icon orange">◷</span><div><p>Overall progress</p><strong id="statProgress">0%</strong></div></div>
+        </div>
+
+        <div class="section-heading">
+          <div><p class="eyebrow">KEEP MOVING</p><h2>Your subjects</h2></div>
+          <button class="text-button" id="viewAllSubjects">View all →</button>
+        </div>
+        <div id="dashboardSubjects" class="subject-grid"></div>
+        <div id="emptyDashboard" class="empty-state">
+          <div class="empty-icon">✦</div><h3>Your first study plan starts here</h3>
+          <p>Add a subject, split it into phases, and add the topics from your syllabus or a plan ChatGPT helped you make.</p>
+          <button class="button primary" id="emptyAddSubject">＋ Create your first subject</button>
+        </div>
+      </section>
+
+      <section class="view" id="subjectsView">
+        <div class="section-heading subject-page-heading">
+          <div><p class="eyebrow">YOUR COURSES</p><h2>Subjects & topics</h2><p class="muted">Build a checklist for every course, project or skill.</p></div>
+          <button class="button primary" id="addSubjectBtn">＋ Add subject</button>
+        </div>
+        <div id="allSubjects"></div>
+        <div id="emptySubjects" class="empty-state">
+          <div class="empty-icon">☷</div><h3>No subjects yet</h3><p>Create a subject and add your first phase or topic.</p>
+          <button class="button primary" id="emptyAddSubject2">＋ Add a subject</button>
+        </div>
+      </section>
+
+      <section class="view" id="todayView">
+        <div class="focus-intro"><p class="eyebrow">ONE THING AT A TIME</p><h2>Today's focus</h2><p class="muted">Pick a few topics to work on today. Your checklists remain attached to their subjects.</p></div>
+        <div class="focus-layout">
+          <div class="panel">
+            <div class="panel-heading"><div><h3>Choose your focus</h3><p class="muted">Select topics to add them to today's list.</p></div></div>
+            <div id="focusPicker"></div>
+          </div>
+          <div class="panel today-panel">
+            <div class="panel-heading"><div><h3>My session</h3><p class="muted" id="focusDate"></p></div><button class="text-button" id="clearFocus">Clear</button></div>
+            <div id="todayList"></div>
+            <div class="focus-note"><label for="sessionNote">Session notes</label><textarea id="sessionNote" placeholder="What did you learn? What should you revisit?"></textarea></div>
+          </div>
+        </div>
+      </section>
+      <footer><span>StudyFlow</span><span>Made for steady progress, one topic at a time.</span><nav class="legal-links" aria-label="Legal"><a href="/terms.html">Terms &amp; Conditions</a><a href="/privacy.html">Privacy Policy</a></nav></footer>
+    </main>
+  </div>
+
+  <dialog id="subjectDialog">
+    <form method="dialog" id="subjectForm">
+      <div class="dialog-heading"><div><p class="eyebrow">NEW LEARNING PLAN</p><h2>Create a subject</h2></div><button class="icon-button" type="button" data-close="subjectDialog">×</button></div>
+      <label for="subjectName">Subject or skill name <span>*</span></label>
+      <input id="subjectName" required maxlength="80" placeholder="e.g. Data Structures & Algorithms" />
+      <label for="subjectDescription">What are you aiming for?</label>
+      <input id="subjectDescription" maxlength="160" placeholder="e.g. End-semester exam + practical coding" />
+      <div class="form-row">
+        <div><label for="subjectDeadline">Target date (optional)</label><input id="subjectDeadline" type="date" /></div>
+        <div><label for="subjectColor">Colour</label><select id="subjectColor"><option value="violet">Violet</option><option value="blue">Blue</option><option value="green">Green</option><option value="orange">Orange</option><option value="pink">Pink</option></select></div>
+      </div>
+      <div class="dialog-actions"><button class="button ghost" type="button" data-close="subjectDialog">Cancel</button><button class="button primary" type="submit">Create subject</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="topicDialog">
+    <form method="dialog" id="topicForm">
+      <div class="dialog-heading"><div><p class="eyebrow">GROW YOUR PLAN</p><h2 id="topicDialogTitle">Add a phase or topic</h2></div><button class="icon-button" type="button" data-close="topicDialog">×</button></div>
+      <input id="topicSubjectId" type="hidden" />
+      <label for="topicKind">What are you adding?</label>
+      <select id="topicKind"><option value="phase">Phase / module (groups topics)</option><option value="topic">Topic / task</option></select>
+      <label for="topicName">Name <span>*</span></label>
+      <input id="topicName" required maxlength="120" placeholder="e.g. Binary Search Trees" />
+      <label for="topicPhase">Put this topic inside a phase (optional)</label>
+      <select id="topicPhase"><option value="">No phase / top level</option></select>
+      <label for="topicDetails">Notes or success criteria (optional)</label>
+      <textarea id="topicDetails" placeholder="e.g. Watch concept video, dry-run, implement in C"></textarea>
+      <div class="dialog-actions"><button class="button ghost" type="button" data-close="topicDialog">Cancel</button><button class="button primary" type="submit">Add to plan</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="editTopicDialog">
+    <form method="dialog" id="editTopicForm">
+      <div class="dialog-heading"><div><p class="eyebrow">TOPIC DETAILS</p><h2>Edit topic</h2></div><button class="icon-button" type="button" data-close="editTopicDialog">×</button></div>
+      <input id="editTopicId" type="hidden" /><input id="editSubjectId" type="hidden" />
+      <label for="editTopicName">Name <span>*</span></label><input id="editTopicName" required maxlength="120" />
+      <label for="editTopicDetails">Notes / success criteria</label><textarea id="editTopicDetails"></textarea>
+      <div class="dialog-actions"><button class="button danger-outline" id="deleteTopicBtn" type="button">Delete</button><span class="spacer"></span><button class="button ghost" type="button" data-close="editTopicDialog">Cancel</button><button class="button primary" type="submit">Save changes</button></div>
+    </form>
+  </dialog>
+
+
+  <dialog id="imageImportDialog">
+    <div class="import-dialog">
+      <div class="dialog-heading">
+        <div><p class="eyebrow">SMART IMPORT</p><h2>Import a study plan</h2></div>
+        <button class="icon-button" type="button" data-close="imageImportDialog">×</button>
+      </div>
+      <p class="muted">Upload screenshots of a roadmap and turn the visible phases and topics into a checklist. Review everything before importing.</p>
+      <label for="planImageInput">Plan screenshot(s)</label>
+      <input id="planImageInput" type="file" accept="image/png,image/jpeg,image/webp" multiple />
+      <p class="hint">Use clear screenshots. For a long plan, select multiple images in the correct order.</p>
+      <div id="imageImportStatus" class="import-status" aria-live="polite"></div>
+      <div id="imagePreviewList" class="image-preview-list"></div>
+      <div class="dialog-actions">
+        <button class="button ghost" type="button" data-close="imageImportDialog">Cancel</button>
+        <span class="spacer"></span>
+        <button class="button primary" id="parsePlanBtn" type="button" disabled>Read screenshots</button>
+      </div>
+      <div id="planReview" class="plan-review" hidden>
+        <div class="review-header"><div><p class="eyebrow">EXTRACTED PLAN</p><h3 id="reviewPlanName"></h3></div><span id="reviewCount" class="review-count"></span></div>
+        <label for="reviewPlanDescription">Goal / description</label>
+        <input id="reviewPlanDescription" maxlength="160" placeholder="What are you studying for?" />
+        <label for="reviewPlanDeadline">Target date (optional)</label>
+        <input id="reviewPlanDeadline" type="date" />
+        <div id="reviewPhases"></div>
+        <div class="dialog-actions">
+          <button class="button ghost" id="backToUploadBtn" type="button">Choose other images</button>
+          <span class="spacer"></span>
+          <button class="button primary" id="importParsedPlanBtn" type="button">Add plan to StudyFlow</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
