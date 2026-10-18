@@ -3,13 +3,15 @@ import express from "express";
 import cors from "cors";
 import { GoogleGenAI } from "@google/genai";
 import { planSchema } from "./plan-schema.js";
+import generateRoadmapHandler from "./api/generate-roadmap.js";
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
 const apiKey = process.env.GEMINI_API_KEY;
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 app.use(cors({ origin: ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5500", "http://127.0.0.1:5500", "null"] }));
-app.use(express.json({ limit: "12mb" }));
+app.use(express.json({ limit: "6mb" }));
+app.post("/api/generate-roadmap", (req, res) => generateRoadmapHandler(req, res));
 app.get("/api/health", (_req, res) => res.json({ ok: true, configured: Boolean(apiKey) }));
 app.post("/api/parse-plan", async (req, res) => {
   try {

@@ -32,3 +32,10 @@ Never commit `.env` or paste API keys into source code. `.env.example` is a safe
 - Online screenshot import is limited to three images at a time, each under 900 KB.
 - Screenshot import consumes the project's API quota. Monitor usage and rotate the API key if it is ever exposed.
 - This project does not currently have user accounts, cross-device sync, or a database.
+
+
+## AI syllabus roadmap
+
+The dashboard includes **Generate with AI**, which accepts a syllabus PDF or image plus a start date and finish date. The server-side Gemini endpoint (`api/generate-roadmap.js`) creates a syllabus-grounded, dated checklist with time-aware allocation, practice, and revision where the available window permits. Users review the generated plan before saving it. The API key remains server-side in `GEMINI_API_KEY`.
+
+Syllabus uploads must be under 3 MB. The app stores topic dates with each checklist item. For local development, run `npm start`; the local Express server exposes `/api/generate-roadmap`.

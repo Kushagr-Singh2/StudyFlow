@@ -19,7 +19,7 @@ function subjectIcon(name){return (name.trim()[0]||"S").toUpperCase()}
 function subjectCard(s){const p=progress(s);return `<article class="subject-card"><div class="subject-card-top"><div class="subject-badge ${esc(s.color)}">${esc(subjectIcon(s.name))}</div><button class="more-btn" title="Delete subject" data-delete-subject="${s.id}">⋯</button></div><h3>${esc(s.name)}</h3><p class="description">${esc(s.description||"Keep building your knowledge.")}</p><div class="progress-row"><span>${p.done} of ${p.total} topics completed</span><strong>${p.pct}%</strong></div><div class="progress-track"><div class="progress-fill" style="width:${p.pct}%"></div></div><div class="subject-card-bottom"><span>${s.deadline?"Target: "+esc(s.deadline):"No target date"}</span><button data-open-subject="${s.id}">Open plan →</button></div></article>`}
 function renderDashboard(){const stats=totalStats();$("#statSubjects").textContent=stats.subjects;$("#statCompleted").innerHTML=`${stats.done} <small>/ ${stats.total}</small>`;$("#statProgress").textContent=stats.pct+"%";$("#dashboardSubjects").innerHTML=state.subjects.slice(0,6).map(subjectCard).join("");$("#emptyDashboard").classList.toggle("show",!state.subjects.length);$("#dashboardSubjects").style.display=state.subjects.length?"grid":"none";$("#dashboardSubjects").style.marginBottom=state.subjects.length?"0":"0"}
 function renderSubjects(){const container=$("#allSubjects");container.innerHTML=state.subjects.map(s=>{const p=progress(s);const phases=s.items.filter(i=>i.kind==="phase");const loose=s.items.filter(i=>i.kind==="topic"&&!i.phaseId);let inner="";phases.forEach(phase=>{const topics=s.items.filter(i=>i.kind==="topic"&&i.phaseId===phase.id);const done=topics.filter(t=>t.done).length;inner+=`<div class="phase"><div class="phase-header"><button class="phase-toggle" data-toggle-phase="${phase.id}" data-subject="${s.id}">⌄</button><span class="phase-title">${esc(phase.name)}</span><span class="phase-count">${done}/${topics.length}</span><button class="topic-tool" data-edit-topic="${phase.id}" data-subject="${s.id}" title="Edit phase">✎</button></div><div class="topic-list" data-phase-list="${phase.id}">${topics.map(t=>topicRow(t,s.id)).join("")||'<div class="no-topics">No topics in this phase yet.</div>'}<button class="add-topic-inline" data-add-topic="${s.id}" data-phase="${phase.id}">＋ Add topic to phase</button></div></div>`});if(loose.length){inner+=`<div class="phase"><div class="phase-header"><span class="phase-title">General topics</span><span class="phase-count">${loose.filter(t=>t.done).length}/${loose.length}</span></div><div class="topic-list">${loose.map(t=>topicRow(t,s.id)).join("")}</div></div>`}return `<section class="subject-block"><div class="subject-block-header"><div class="subject-badge ${esc(s.color)}">${esc(subjectIcon(s.name))}</div><div class="header-info"><h3>${esc(s.name)}</h3><p>${esc(s.description||"No description")} · ${p.done}/${p.total} topics complete</p></div><div class="progress-mini"><div class="progress-track"><div class="progress-fill" style="width:${p.pct}%"></div></div></div><div class="subject-block-actions"><button class="small-btn" data-add-phase="${s.id}">＋ Phase/topic</button><button class="small-btn" data-delete-subject="${s.id}">Delete</button></div></div>${inner||'<div class="topic-list"><div class="no-topics">Add a phase or topic to begin.</div></div>'}<div class="phase"><div class="topic-list"><button class="add-topic-inline" data-add-phase="${s.id}">＋ Add phase or topic</button></div></div></section>`}).join("");$("#emptySubjects").classList.toggle("show",!state.subjects.length);container.style.display=state.subjects.length?"block":"none"}
-function topicRow(t,sid){return `<div class="topic-row ${t.done?"completed":""}"><input class="topic-check" type="checkbox" aria-label="Mark ${esc(t.name)} complete" data-toggle-topic="${t.id}" data-subject="${sid}" ${t.done?"checked":""}><div class="topic-copy"><strong>${esc(t.name)}</strong>${t.details?`<div class="topic-details">${esc(t.details)}</div>`:""}</div><div class="topic-tools"><button class="topic-tool" data-edit-topic="${t.id}" data-subject="${sid}" title="Edit">✎</button></div></div>`}
+function topicRow(t,sid){return `<div class="topic-row ${t.done?"completed":""}"><input class="topic-check" type="checkbox" aria-label="Mark ${esc(t.name)} complete" data-toggle-topic="${t.id}" data-subject="${sid}" ${t.done?"checked":""}><div class="topic-copy"><strong>${esc(t.name)}</strong>${t.scheduleDate?`<div class="topic-schedule">📅 ${esc(t.scheduleDate)}</div>`:""}${t.details?`<div class="topic-details">${esc(t.details)}</div>`:""}</div><div class="topic-tools"><button class="topic-tool" data-edit-topic="${t.id}" data-subject="${sid}" title="Edit">✎</button></div></div>`}
 function renderFocus(){const picker=$("#focusPicker");picker.innerHTML=state.subjects.map(s=>{const pending=allTopics(s).filter(t=>!t.done);return `<div class="picker-subject"><div class="picker-subject-title">${esc(s.name)}</div>${pending.length?pending.map(t=>`<label class="picker-topic"><input type="checkbox" data-focus-add="${t.id}" data-subject="${s.id}" ${state.focus.some(f=>f.topicId===t.id&&f.subjectId===s.id)?"checked":""}>${esc(t.name)}</label>`).join(""):'<div class="empty-small">All topics completed. Nice work!</div>'}</div>`}).join("")||'<div class="empty-small">Create a subject first, then select topics to focus on.</div>';$("#focusDate").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});$("#sessionNote").value=state.sessionNote||"";const items=state.focus.map(f=>{const s=state.subjects.find(x=>x.id===f.subjectId);const t=s?.items.find(x=>x.id===f.topicId&&x.kind==="topic");return s&&t?{s,t}:null}).filter(Boolean);$("#todayList").innerHTML=items.map(({s,t})=>`<div class="today-item"><input class="topic-check" type="checkbox" data-toggle-topic="${t.id}" data-subject="${s.id}" ${t.done?"checked":""}><div class="today-copy">${esc(t.name)}<small>${esc(s.name)}</small></div><button data-focus-remove="${t.id}" data-subject="${s.id}" title="Remove from focus">×</button></div>`).join("")||'<div class="empty-small">Nothing selected yet. Choose a few topics on the left.</div>'}
 function renderAll(){renderDashboard();renderSubjects();if($("#todayView").classList.contains("active"))renderFocus()}
 function addSubject(data){state.subjects.push({id:uid(),name:data.name,description:data.description,deadline:data.deadline,color:data.color,items:[]});save();showToast("Subject created")}
@@ -45,6 +45,109 @@ $("#exportBtn").addEventListener("click",exportBackup);$("#importInput").addEven
 $("#todayLabel").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}).toUpperCase();
 renderAll();
 
+
+// AI syllabus-to-roadmap flow. Gemini creates a dated checklist; the user approves it before saving.
+let generatedRoadmapDraft = null;
+const roadmapFileInput = $("#syllabusFile");
+const roadmapStatus = $("#roadmapStatus");
+const roadmapSubmit = $("#generateRoadmapSubmit");
+const roadmapStart = $("#roadmapStartDate");
+const roadmapEnd = $("#roadmapEndDate");
+function setRoadmapStatus(message, type="") {
+  roadmapStatus.textContent = message;
+  roadmapStatus.className = "import-status" + (type ? " " + type : "");
+}
+function openRoadmapDialog() {
+  const today = new Date();
+  const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0,10);
+  roadmapStart.value = localDate;
+  roadmapEnd.value = localDate;
+  roadmapFileInput.value = "";
+  generatedRoadmapDraft = null;
+  $("#roadmapReview").hidden = true;
+  setRoadmapStatus("Choose a syllabus and your preparation dates.");
+  openDialog("#roadmapDialog");
+}
+$("#generateRoadmapBtn").addEventListener("click", openRoadmapDialog);
+$("#regenerateRoadmapBtn").addEventListener("click", () => {
+  generatedRoadmapDraft = null;
+  $("#roadmapReview").hidden = true;
+  setRoadmapStatus("Choose a syllabus and dates, then generate again.");
+});
+function roadmapAllTopics(plan) {
+  return [...(plan.topics || []), ...(plan.phases || []).flatMap(p => p.topics || [])];
+}
+function renderRoadmapPreview(plan) {
+  const all = roadmapAllTopics(plan);
+  $("#roadmapReviewName").textContent = plan.name || "Your study roadmap";
+  $("#roadmapReviewCount").textContent = `${all.length} checklist items`;
+  $("#roadmapReviewSummary").textContent = plan.summary || plan.description || "Review your generated roadmap before saving.";
+  $("#roadmapReviewPhases").innerHTML = (plan.phases || []).map(phase =>
+    `<div class="review-phase"><div class="review-phase-title">${esc(phase.name)}</div>${phase.details ? `<p>${esc(phase.details)}</p>` : ""}<ul>${(phase.topics || []).map(t => `<li><strong>${esc(t.scheduleDate)} · ${esc(t.name)}</strong>${t.details ? ` — ${esc(t.details)}` : ""}</li>`).join("")}</ul></div>`
+  ).join("") + ((plan.topics || []).length ? `<div class="review-phase"><div class="review-phase-title">Other topics</div><ul>${plan.topics.map(t => `<li><strong>${esc(t.scheduleDate)} · ${esc(t.name)}</strong>${t.details ? ` — ${esc(t.details)}` : ""}</li>`).join("")}</ul></div>` : "");
+  $("#roadmapReview").hidden = false;
+  $("#roadmapReview").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+    reader.onerror = () => reject(new Error("Could not read that file. Try choosing it again."));
+    reader.readAsDataURL(file);
+  });
+}
+roadmapSubmit.addEventListener("click", async () => {
+  const file = roadmapFileInput.files?.[0];
+  const startDate = roadmapStart.value;
+  const endDate = roadmapEnd.value;
+  if (!file) return setRoadmapStatus("Choose your syllabus file first.", "error");
+  if (!startDate || !endDate || startDate > endDate) return setRoadmapStatus("Choose a valid start date and finish date.", "error");
+  if (!["application/pdf","image/png","image/jpeg","image/webp"].includes(file.type)) return setRoadmapStatus("Use a PDF, PNG, JPEG or WebP file.", "error");
+  if (file.size > 3 * 1024 * 1024) return setRoadmapStatus("Keep the file under 3 MB. For a large syllabus, export selected pages or use screenshots.", "error");
+  roadmapSubmit.disabled = true;
+  $("#roadmapReview").hidden = true;
+  try {
+    setRoadmapStatus("Gemini is reading your syllabus and planning the available days…");
+    let payload;
+    if (file.type === "application/pdf") {
+      payload = { mimeType:file.type, data:await fileToBase64(file), name:file.name };
+    } else {
+      payload = await fileToPayload(file);
+      payload.mimeType = file.type;
+      // Preserve the compressed image payload's JPEG mime type where applicable.
+      if (payload.mimeType !== "image/jpeg") payload.mimeType = "image/jpeg";
+    }
+    const apiUrl = (location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "http://localhost:3001/api/generate-roadmap" : "/api/generate-roadmap";
+    const response = await fetch(apiUrl, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({file:payload,startDate,endDate}) });
+    const result = await response.json().catch(() => ({error:"The server returned an unreadable response."}));
+    if (!response.ok) throw new Error(result.error || "Could not generate the roadmap.");
+    if (!result.plan || !Array.isArray(result.plan.phases)) throw new Error("Gemini returned an incomplete roadmap. Try again.");
+    generatedRoadmapDraft = result.plan;
+    renderRoadmapPreview(generatedRoadmapDraft);
+    setRoadmapStatus("Roadmap generated. Review the dates and tasks before adding it to SemReady.", "success");
+  } catch (error) {
+    setRoadmapStatus(error.message || "Could not generate the roadmap. Try again.", "error");
+  } finally {
+    roadmapSubmit.disabled = false;
+  }
+});
+$("#saveRoadmapBtn").addEventListener("click", () => {
+  if (!generatedRoadmapDraft) return;
+  const plan = generatedRoadmapDraft;
+  const subject = { id:uid(), name:plan.name || "Study roadmap", description:plan.description || plan.summary || "", deadline:roadmapEnd.value, color:"violet", items:[] };
+  (plan.phases || []).forEach(phase => {
+    const phaseId = uid();
+    subject.items.push({id:phaseId,kind:"phase",name:phase.name,details:phase.details||"",phaseId:"",done:false});
+    (phase.topics || []).forEach(topic => subject.items.push({id:uid(),kind:"topic",name:topic.name,details:topic.details||"",scheduleDate:topic.scheduleDate||roadmapStart.value,phaseId,done:false}));
+  });
+  (plan.topics || []).forEach(topic => subject.items.push({id:uid(),kind:"topic",name:topic.name,details:topic.details||"",scheduleDate:topic.scheduleDate||roadmapStart.value,phaseId:"",done:false}));
+  state.subjects.push(subject);
+  save();
+  closeDialog("#roadmapDialog");
+  generatedRoadmapDraft = null;
+  setView("subjects");
+  showToast("AI study roadmap added");
+});
 
 // Screenshot import. The API key stays on the server, never in browser code.
 let parsedPlanDraft = null;

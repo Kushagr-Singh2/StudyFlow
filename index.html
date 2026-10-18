@@ -98,7 +98,8 @@
           <h1 id="pageTitle">Dashboard</h1>
         </div>
         <div class="top-actions">
-          <button class="button ghost" id="importPlanBtn">✧ Import screenshot</button>
+          <button class="button primary" id="generateRoadmapBtn">✦ Generate with AI</button>
+          <button class="button ghost" id="importPlanBtn">Import screenshot</button>
           <button class="button ghost" id="exportBtn">Export backup</button>
           <label class="button ghost import-button">Import backup<input type="file" id="importInput" accept="application/json,.json" hidden></label>
           <button class="button primary" id="addSubjectTop">＋ Add subject</button>
@@ -243,6 +244,39 @@
     </form>
   </dialog>
 
+
+  <dialog id="roadmapDialog">
+    <div class="import-dialog">
+      <div class="dialog-heading">
+        <div><p class="eyebrow">GEMINI STUDY PLANNER</p><h2>Generate a study roadmap</h2></div>
+        <button class="icon-button" type="button" data-close="roadmapDialog">×</button>
+      </div>
+      <p class="muted">Upload your syllabus. Gemini will organise its topics into a dated checklist based on your preparation window.</p>
+      <label for="syllabusFile">Syllabus file (PDF or screenshots)</label>
+      <input id="syllabusFile" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" required />
+      <p class="hint">For best results, upload a clear syllabus PDF. Keep files under 3 MB.</p>
+      <div class="form-row">
+        <div><label for="roadmapStartDate">When do you want to start? *</label><input id="roadmapStartDate" type="date" required /></div>
+        <div><label for="roadmapEndDate">Finish by *</label><input id="roadmapEndDate" type="date" required /></div>
+      </div>
+      <div id="roadmapStatus" class="import-status" aria-live="polite"></div>
+      <div class="dialog-actions">
+        <button class="button ghost" type="button" data-close="roadmapDialog">Cancel</button>
+        <span class="spacer"></span>
+        <button class="button primary" id="generateRoadmapSubmit" type="button">Generate roadmap</button>
+      </div>
+      <div id="roadmapReview" class="plan-review" hidden>
+        <div class="review-header"><div><p class="eyebrow">YOUR ROADMAP</p><h3 id="roadmapReviewName"></h3></div><span id="roadmapReviewCount" class="review-count"></span></div>
+        <p class="muted" id="roadmapReviewSummary"></p>
+        <div id="roadmapReviewPhases"></div>
+        <div class="dialog-actions">
+          <button class="button ghost" id="regenerateRoadmapBtn" type="button">Change dates / file</button>
+          <span class="spacer"></span>
+          <button class="button primary" id="saveRoadmapBtn" type="button">Add plan to SemReady</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
 
   <dialog id="imageImportDialog">
     <div class="import-dialog">
