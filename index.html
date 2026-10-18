@@ -3,24 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SemReady — Your Semester Study Planner</title>
+<title>SemReady — Study &amp; Semester Planner for College Students</title>
 
-<meta name="description"
-  content="Get your semester together with SemReady. Organise subjects, turn syllabi into checklists, plan study sessions, and stay on top of exams at any university." />
+<meta name="description" content="Plan your semester, organise subjects and deadlines, turn syllabi into checklists, and prepare for exams with SemReady, a study planner for university students." />
 
 <meta name="robots" content="index, follow" />
-<meta property="og:title" content="SemReady — Your Semester Study Planner" />
-<meta property="og:description" content="Your subjects, deadlines, syllabus checklists, and exam prep in one place. Get your semester together with SemReady." />
+<meta property="og:title" content="SemReady — Study &amp; Semester Planner for College Students" />
+<meta property="og:description" content="Plan your semester, organise subjects and deadlines, turn syllabi into checklists, and prepare for exams with SemReady." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://getsemready.vercel.app/" />
 <meta property="og:site_name" content="SemReady" />
 <link rel="canonical" href="https://getsemready.vercel.app/" />
 <meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="SemReady — Your Semester Study Planner" />
-<meta name="twitter:description" content="Get your semester together. Organise subjects, syllabus checklists, and exam prep in one place." />
+<meta name="twitter:title" content="SemReady — Study &amp; Semester Planner for College Students" />
+<meta name="twitter:description" content="Plan your semester, organise subjects and deadlines, turn syllabi into checklists, and prepare for exams with SemReady." />
   <meta name="theme-color" content="#6c5ce7" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="style.css" />
+
+  <style>
+    .seo-intro {
+      margin: 2.5rem 0 1.5rem;
+      padding: 1.5rem;
+      border: 1px solid var(--border, #e6e6ef);
+      border-radius: 1rem;
+      background: var(--surface, #fff);
+      color: var(--text, #25243a);
+      line-height: 1.7;
+    }
+    .seo-intro > p { max-width: 76ch; margin: 1rem 0; }
+    .seo-feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+    .seo-feature-grid article {
+      padding: 1rem;
+      border: 1px solid var(--border, #e6e6ef);
+      border-radius: .75rem;
+    }
+    .seo-feature-grid h3 { margin: 0 0 .5rem; font-size: 1rem; }
+    .seo-feature-grid p { margin: 0; font-size: .95rem; }
+    @media (max-width: 760px) {
+      .seo-feature-grid { grid-template-columns: 1fr; }
+      .seo-intro { padding: 1rem; }
+    }
+  </style>
+
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "SemReady",
+    "url": "https://getsemready.vercel.app/",
+    "description": "A study and semester planner for university students to organise subjects, plan topics, build syllabus checklists, and prepare for exams.",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any"
+  }
+  </script>
   <meta name="google-site-verification" content="QUUCjNbpfF13bgT0jhDtMhS5EWYcNUJf-2BnA0dk3LM" />
 </head>
 <body>
@@ -111,6 +153,40 @@
           </div>
         </div>
       </section>
+
+      <section class="seo-intro" aria-labelledby="seoIntroTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">MADE FOR STUDENT LIFE</p>
+            <h2 id="seoIntroTitle">A study planner for your whole semester</h2>
+          </div>
+        </div>
+        <p>
+          SemReady is a study planner for college and university students who want to organise
+          their subjects, keep track of deadlines, and prepare for exams with a clearer plan.
+          Build a semester study plan around your courses and work through it one topic at a time.
+        </p>
+        <div class="seo-feature-grid">
+          <article>
+            <h3>Organise subjects and topics</h3>
+            <p>Break each course, project, or skill into phases and manageable tasks, then track your progress as you study.</p>
+          </article>
+          <article>
+            <h3>Turn a syllabus into a checklist</h3>
+            <p>Import screenshots of a study roadmap and review the extracted topics before adding them to your plan.</p>
+          </article>
+          <article>
+            <h3>Plan exam preparation</h3>
+            <p>Set target dates, choose topics for today's focus, and keep your study tasks in one place.</p>
+          </article>
+        </div>
+        <p>
+          Whether you're planning a new semester or preparing for end-semester exams, SemReady
+          helps you turn a large workload into smaller, actionable steps. Your plans are saved
+          in your browser, and you can export a backup to keep a copy of your work.
+        </p>
+      </section>
+
       <footer><span>SemReady</span><span>Your semester, one topic at a time.</span><nav class="legal-links" aria-label="Legal"><a href="/terms.html">Terms &amp; Conditions</a><a href="/privacy.html">Privacy Policy</a></nav></footer>
     </main>
   </div>
