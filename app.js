@@ -52,36 +52,110 @@ let selectedPlanFiles = [];
 const planImageInput = $("#planImageInput");
 const parsePlanBtn = $("#parsePlanBtn");
 const imageImportStatus = $("#imageImportStatus");
+const imagePreviewList = $("#imagePreviewList");
+const allowedImageTypes = ["image/png", "image/jpeg", "image/webp"];
+const previewObjectUrls = new Set();
+
 function setImportStatus(message, type="") {
   imageImportStatus.textContent = message;
   imageImportStatus.className = "import-status" + (type ? " " + type : "");
+}
+function clearPreviewUrls() {
+  previewObjectUrls.forEach(url => URL.revokeObjectURL(url));
+  previewObjectUrls.clear();
 }
 function resetPlanImport() {
   selectedPlanFiles = [];
   parsedPlanDraft = null;
   planImageInput.value = "";
-  $("#imagePreviewList").innerHTML = "";
+  clearPreviewUrls();
+  imagePreviewList.innerHTML = "";
   $("#planReview").hidden = true;
   parsePlanBtn.disabled = true;
-  setImportStatus("");
+  setImportStatus("Choose screenshots or paste them with Ctrl + V.");
+}
+function addPlanFiles(files) {
+  const incoming = [...files].filter(file => allowedImageTypes.includes(file.type));
+  if (!incoming.length) {
+    if (files.length) setImportStatus("Use PNG, JPEG or WebP screenshots.", "error");
+    return;
+  }
+  const existingKeys = new Set(selectedPlanFiles.map(file => `${file.name}|${file.size}|${file.lastModified}`));
+  const uniqueIncoming = incoming.filter(file => {
+    const key = `${file.name}|${file.size}|${file.lastModified}`;
+    if (existingKeys.has(key)) return false;
+    existingKeys.add(key);
+    return true;
+  });
+  selectedPlanFiles.push(...uniqueIncoming);
+  renderSelectedPlanFiles();
+  $("#planReview").hidden = true;
+  parsedPlanDraft = null;
+  setImportStatus(`${selectedPlanFiles.length} screenshot(s) ready. Add more with Ctrl + V or Browse.`, selectedPlanFiles.length ? "" : "error");
+}
+function renderSelectedPlanFiles() {
+  clearPreviewUrls();
+  imagePreviewList.innerHTML = "";
+  selectedPlanFiles.forEach((file, index) => {
+    const item = document.createElement("div");
+    item.className = "image-preview-item";
+    const img = document.createElement("img");
+    img.className = "image-preview";
+    img.alt = file.name || `Pasted screenshot ${index + 1}`;
+    const url = URL.createObjectURL(file);
+    previewObjectUrls.add(url);
+    img.src = url;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "remove-image-preview";
+    remove.textContent = "×";
+    remove.title = "Remove screenshot";
+    remove.setAttribute("aria-label", `Remove screenshot ${index + 1}`);
+    remove.addEventListener("click", () => {
+      selectedPlanFiles.splice(index, 1);
+      parsedPlanDraft = null;
+      $("#planReview").hidden = true;
+      renderSelectedPlanFiles();
+      setImportStatus(selectedPlanFiles.length
+        ? `${selectedPlanFiles.length} screenshot(s) ready. Add more with Ctrl + V or Browse.`
+        : "Choose screenshots or paste them with Ctrl + V.");
+    });
+    const caption = document.createElement("span");
+    caption.className = "image-preview-name";
+    caption.textContent = file.name || `Pasted screenshot ${index + 1}`;
+    item.append(img, remove, caption);
+    imagePreviewList.appendChild(item);
+  });
+  parsePlanBtn.disabled = selectedPlanFiles.length === 0;
 }
 $("#importPlanBtn").addEventListener("click", () => {
   resetPlanImport();
   openDialog("#imageImportDialog");
 });
 planImageInput.addEventListener("change", () => {
-  selectedPlanFiles = [...planImageInput.files].filter(f => ["image/png","image/jpeg","image/webp"].includes(f.type));
-  $("#imagePreviewList").innerHTML = "";
-  selectedPlanFiles.forEach(file => {
-    const img = document.createElement("img");
-    img.className = "image-preview";
-    img.alt = file.name;
-    img.src = URL.createObjectURL(file);
-    $("#imagePreviewList").appendChild(img);
-  });
-  parsePlanBtn.disabled = selectedPlanFiles.length === 0;
-  setImportStatus(selectedPlanFiles.length ? `${selectedPlanFiles.length} screenshot(s) selected. Check their order before continuing.` : "Choose PNG, JPEG or WebP screenshots.", selectedPlanFiles.length ? "" : "error");
+  addPlanFiles([...planImageInput.files]);
+  // Clear the input so the same file can be selected again if needed.
+  planImageInput.value = "";
 });
+
+// Paste copied screenshots directly into the open import dialog with Ctrl+V.
+document.addEventListener("paste", event => {
+  const dialog = $("#imageImportDialog");
+  if (!dialog?.open) return;
+  const items = [...(event.clipboardData?.items || [])];
+  const pastedImages = items
+    .filter(item => item.kind === "file" && allowedImageTypes.includes(item.type))
+    .map(item => item.getAsFile())
+    .filter(Boolean);
+  if (pastedImages.length) {
+    event.preventDefault();
+    const namedFiles = pastedImages.map((file, index) =>
+      new File([file], `pasted-screenshot-${Date.now()}-${index + 1}.${file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg"}`, { type: file.type, lastModified: Date.now() })
+    );
+    addPlanFiles(namedFiles);
+  }
+});
+
 async function fileToPayload(file) {
   // Compress screenshots in the browser to stay within serverless request limits.
   const bitmap = await createImageBitmap(file);
@@ -98,33 +172,58 @@ async function fileToPayload(file) {
   let blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.78));
   if (!blob) throw new Error("This image could not be prepared. Try another screenshot.");
   if (blob.size > 900 * 1024) blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.58));
-  if (!blob || blob.size > 900 * 1024) throw new Error("This screenshot is too detailed to upload. Try cropping it into smaller sections.");
+  if (!blob || blob.size > 900 * 1024) throw new Error("A screenshot is too detailed to upload. Try cropping it into smaller sections.");
   const reader = new FileReader();
   const dataUrl = await new Promise((resolve,reject) => { reader.onload=()=>resolve(String(reader.result)); reader.onerror=reject; reader.readAsDataURL(blob); });
   return { mimeType: "image/jpeg", data: dataUrl.split(",")[1], name: file.name };
 }
+function mergeExtractedPlans(plans) {
+  const merged = { name: plans.find(plan => plan?.name)?.name || "Imported study plan", description: "", deadline: "", phases: [], topics: [] };
+  for (const plan of plans) {
+    if (!plan) continue;
+    merged.phases.push(...(Array.isArray(plan.phases) ? plan.phases : []));
+    merged.topics.push(...(Array.isArray(plan.topics) ? plan.topics : []));
+    if (!merged.description && plan.description) merged.description = plan.description;
+    if (!merged.deadline && plan.deadline) merged.deadline = plan.deadline;
+  }
+  return merged;
+}
 parsePlanBtn.addEventListener("click", async () => {
   if (!selectedPlanFiles.length) return;
+  const filesToRead = [...selectedPlanFiles];
   parsePlanBtn.disabled = true;
-  setImportStatus("Reading your screenshots…");
   try {
-    const images = await Promise.all(selectedPlanFiles.map(fileToPayload));
     const apiUrl = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
       ? "http://localhost:3001/api/parse-plan"
       : "/api/parse-plan";
-    const response = await fetch(apiUrl, {
-      method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({images})
-    });
-    const result = await response.json().catch(()=>({error:"The local server returned an unreadable response."}));
-    if (!response.ok) throw new Error(result.error || "Could not read the plan.");
-    parsedPlanDraft = result.plan;
-    if (!parsedPlanDraft || !parsedPlanDraft.name || !Array.isArray(parsedPlanDraft.phases)) throw new Error("The extracted plan was incomplete. Try clearer screenshots.");
+    // Keep each request small, but let the user import any number of screenshots.
+    // Three images per request is a transport safeguard, not a user-facing limit.
+    const batchSize = 3;
+    const extractedPlans = [];
+    const batchCount = Math.ceil(filesToRead.length / batchSize);
+    for (let offset = 0; offset < filesToRead.length; offset += batchSize) {
+      const batch = filesToRead.slice(offset, offset + batchSize);
+      const batchNumber = Math.floor(offset / batchSize) + 1;
+      setImportStatus(batchCount > 1
+        ? `Reading screenshots — batch ${batchNumber} of ${batchCount}…`
+        : "Reading your screenshots…");
+      const images = await Promise.all(batch.map(fileToPayload));
+      const response = await fetch(apiUrl, {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({images})
+      });
+      const result = await response.json().catch(()=>({error:"The server returned an unreadable response."}));
+      if (!response.ok) throw new Error(result.error || "Could not read the plan.");
+      if (!result.plan || !Array.isArray(result.plan.phases)) throw new Error("The extracted plan was incomplete. Try clearer screenshots.");
+      extractedPlans.push(result.plan);
+    }
+    parsedPlanDraft = mergeExtractedPlans(extractedPlans);
+    if (!parsedPlanDraft.name || !Array.isArray(parsedPlanDraft.phases)) throw new Error("The extracted plan was incomplete. Try clearer screenshots.");
     renderPlanReview(parsedPlanDraft);
-    setImportStatus("Plan extracted. Review the topics below before importing.", "success");
+    setImportStatus(`Read ${filesToRead.length} screenshot(s). Review the combined plan below before importing.`, "success");
   } catch (err) {
     setImportStatus((err.message || "Something went wrong.") + (String(err.message).includes("fetch") ? ((location.hostname === "localhost" || location.hostname === "127.0.0.1") ? " Make sure the local server is running (npm start)." : " Please try again in a moment.") : ""), "error");
   } finally {
-    parsePlanBtn.disabled = false;
+    parsePlanBtn.disabled = selectedPlanFiles.length === 0;
   }
 });
 function renderPlanReview(plan) {
