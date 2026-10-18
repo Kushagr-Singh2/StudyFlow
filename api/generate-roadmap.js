@@ -62,7 +62,7 @@ export default async function handler(req, res) {
   if (Buffer.byteLength(file.data, "base64") > MAX_FILE_BYTES) {
     return res.status(413).json({ error: "Keep the syllabus file under 3 MB and try again." });
   }
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(startDate || "") || !/^\\d{4}-\\d{2}-\\d{2}$/.test(endDate || "") || startDate > endDate) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate || "") || !/^\d{4}-\d{2}-\d{2}$/.test(endDate || "") || startDate > endDate) {
     return res.status(400).json({ error: "Choose a valid start date and finish date." });
   }
 
@@ -88,7 +88,7 @@ Return a concise subject name, a useful description, and a summary explaining th
     plan.phases = Array.isArray(plan.phases) ? plan.phases : [];
     plan.topics = Array.isArray(plan.topics) ? plan.topics : [];
     const allTopics = [...plan.topics, ...plan.phases.flatMap(p => Array.isArray(p.topics) ? p.topics : [])];
-    const validDate = date => /^\\d{4}-\\d{2}-\\d{2}$/.test(date || "") && date >= startDate && date <= endDate;
+    const validDate = date => /^\d{4}-\d{2}-\d{2}$/.test(date || "") && date >= startDate && date <= endDate;
     for (const topic of allTopics) {
       if (!validDate(topic.scheduleDate)) topic.scheduleDate = startDate;
       topic.name = String(topic.name || "Review syllabus topic").slice(0, 160);
