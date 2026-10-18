@@ -17,7 +17,11 @@
 }
 #roadmapDialog .form-row { margin: 1rem 0; }
 #roadmapDialog .form-row > div { min-width: 0; }
-#roadmapDialog input[type="date"] { width: 100%; }
+#roadmapDialog .date-input-wrap { position: relative; display: flex; align-items: center; }
+#roadmapDialog .date-input-wrap > input[type="text"] { padding-right: 42px; }
+#roadmapDialog .calendar-picker-button { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #777b91; font-size: 19px; cursor: pointer; }
+#roadmapDialog .calendar-picker-button:hover { background: #f3f1ff; color: var(--primary); }
+#roadmapDialog .native-date-picker { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; left: 50%; bottom: 0; }
 #roadmapReviewPhases .review-phase { margin-top: .75rem; }
 #roadmapReviewPhases .review-phase ul { padding-left: 1.25rem; }
 #roadmapReviewPhases .review-phase li { margin: .45rem 0; line-height: 1.5; }

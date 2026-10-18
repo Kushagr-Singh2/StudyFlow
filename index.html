@@ -256,8 +256,8 @@
       <input id="syllabusFile" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" required />
       <p class="hint">For best results, upload a clear syllabus PDF. Keep files under 3 MB.</p>
       <div class="form-row">
-        <div><label for="roadmapStartDate">When do you want to start? *</label><input id="roadmapStartDate" type="text" inputmode="numeric" autocomplete="off" placeholder="DD/MM/YYYY" aria-describedby="roadmapDateHint" maxlength="10" required /></div>
-        <div><label for="roadmapEndDate">Finish by *</label><input id="roadmapEndDate" type="text" inputmode="numeric" autocomplete="off" placeholder="DD/MM/YYYY" aria-describedby="roadmapDateHint" maxlength="10" required /></div>
+        <div class="roadmap-date-field"><label for="roadmapStartDate">When do you want to start? *</label><div class="date-input-wrap"><input id="roadmapStartDate" type="text" inputmode="numeric" autocomplete="off" placeholder="DD/MM/YYYY" aria-describedby="roadmapDateHint" maxlength="10" required /><button class="calendar-picker-button" type="button" data-date-picker="roadmapStartPicker" aria-label="Choose start date from calendar">▦</button><input id="roadmapStartPicker" class="native-date-picker" type="date" tabindex="-1" aria-hidden="true" /></div></div>
+        <div class="roadmap-date-field"><label for="roadmapEndDate">Finish by *</label><div class="date-input-wrap"><input id="roadmapEndDate" type="text" inputmode="numeric" autocomplete="off" placeholder="DD/MM/YYYY" aria-describedby="roadmapDateHint" maxlength="10" required /><button class="calendar-picker-button" type="button" data-date-picker="roadmapEndPicker" aria-label="Choose finish date from calendar">▦</button><input id="roadmapEndPicker" class="native-date-picker" type="date" tabindex="-1" aria-hidden="true" /></div></div>
       </div>
       <p class="hint" id="roadmapDateHint">Enter dates as DD/MM/YYYY.</p>
       <div id="roadmapStatus" class="import-status" aria-live="polite"></div>

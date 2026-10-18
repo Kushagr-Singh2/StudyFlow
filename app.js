@@ -53,6 +53,8 @@ const roadmapStatus = $("#roadmapStatus");
 const roadmapSubmit = $("#generateRoadmapSubmit");
 const roadmapStart = $("#roadmapStartDate");
 const roadmapEnd = $("#roadmapEndDate");
+const roadmapStartPicker = $("#roadmapStartPicker");
+const roadmapEndPicker = $("#roadmapEndPicker");
 function formatRoadmapDate(isoDate) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate || "");
   return match ? `${match[3]}/${match[2]}/${match[1]}` : (isoDate || "");
@@ -70,6 +72,26 @@ function formatRoadmapDateInput(input) {
   input.value = digits.length <= 2 ? digits : digits.length <= 4 ? `${digits.slice(0,2)}/${digits.slice(2)}` : `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
 }
 [roadmapStart, roadmapEnd].forEach(input => input.addEventListener("input", () => formatRoadmapDateInput(input)));
+function syncPickerFromText(textInput, picker) {
+  const iso = parseRoadmapDate(textInput.value);
+  if (iso) picker.value = iso;
+}
+function syncTextFromPicker(picker, textInput) {
+  if (picker.value) textInput.value = formatRoadmapDate(picker.value);
+}
+roadmapStart.addEventListener("change", () => syncPickerFromText(roadmapStart, roadmapStartPicker));
+roadmapEnd.addEventListener("change", () => syncPickerFromText(roadmapEnd, roadmapEndPicker));
+roadmapStartPicker.addEventListener("change", () => syncTextFromPicker(roadmapStartPicker, roadmapStart));
+roadmapEndPicker.addEventListener("change", () => syncTextFromPicker(roadmapEndPicker, roadmapEnd));
+document.querySelectorAll("[data-date-picker]").forEach(button => button.addEventListener("click", () => {
+  const picker = $("#" + button.dataset.datePicker);
+  const textInput = picker === roadmapStartPicker ? roadmapStart : roadmapEnd;
+  syncPickerFromText(textInput, picker);
+  try {
+    if (typeof picker.showPicker === "function") picker.showPicker();
+    else { picker.focus(); picker.click(); }
+  } catch (_) { picker.focus(); picker.click(); }
+}));
 function setRoadmapStatus(message, type="") {
   roadmapStatus.textContent = message;
   roadmapStatus.className = "import-status" + (type ? " " + type : "");
@@ -79,6 +101,8 @@ function openRoadmapDialog() {
   const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0,10);
   roadmapStart.value = formatRoadmapDate(localDate);
   roadmapEnd.value = formatRoadmapDate(localDate);
+  roadmapStartPicker.value = localDate;
+  roadmapEndPicker.value = localDate;
   roadmapFileInput.value = "";
   generatedRoadmapDraft = null;
   $("#roadmapReview").hidden = true;
