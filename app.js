@@ -46,13 +46,30 @@ $("#todayLabel").textContent=new Date().toLocaleDateString(undefined,{weekday:"l
 renderAll();
 
 
-// AI syllabus-to-roadmap flow. Gemini creates a dated checklist; the user approves it before saving.
+// AI syllabus-to-roadmap flow. The AI creates a dated checklist; the user approves it before saving.
 let generatedRoadmapDraft = null;
 const roadmapFileInput = $("#syllabusFile");
 const roadmapStatus = $("#roadmapStatus");
 const roadmapSubmit = $("#generateRoadmapSubmit");
 const roadmapStart = $("#roadmapStartDate");
 const roadmapEnd = $("#roadmapEndDate");
+function formatRoadmapDate(isoDate) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate || "");
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : (isoDate || "");
+}
+function parseRoadmapDate(displayDate) {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec((displayDate || "").trim());
+  if (!match) return null;
+  const day = Number(match[1]), month = Number(match[2]), year = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+  return `${String(year).padStart(4,"0")}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+}
+function formatRoadmapDateInput(input) {
+  const digits = input.value.replace(/\D/g, "").slice(0, 8);
+  input.value = digits.length <= 2 ? digits : digits.length <= 4 ? `${digits.slice(0,2)}/${digits.slice(2)}` : `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
+}
+[roadmapStart, roadmapEnd].forEach(input => input.addEventListener("input", () => formatRoadmapDateInput(input)));
 function setRoadmapStatus(message, type="") {
   roadmapStatus.textContent = message;
   roadmapStatus.className = "import-status" + (type ? " " + type : "");
@@ -60,8 +77,8 @@ function setRoadmapStatus(message, type="") {
 function openRoadmapDialog() {
   const today = new Date();
   const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0,10);
-  roadmapStart.value = localDate;
-  roadmapEnd.value = localDate;
+  roadmapStart.value = formatRoadmapDate(localDate);
+  roadmapEnd.value = formatRoadmapDate(localDate);
   roadmapFileInput.value = "";
   generatedRoadmapDraft = null;
   $("#roadmapReview").hidden = true;
@@ -83,8 +100,8 @@ function renderRoadmapPreview(plan) {
   $("#roadmapReviewCount").textContent = `${all.length} checklist items`;
   $("#roadmapReviewSummary").textContent = plan.summary || plan.description || "Review your generated roadmap before saving.";
   $("#roadmapReviewPhases").innerHTML = (plan.phases || []).map(phase =>
-    `<div class="review-phase"><div class="review-phase-title">${esc(phase.name)}</div>${phase.details ? `<p>${esc(phase.details)}</p>` : ""}<ul>${(phase.topics || []).map(t => `<li><strong>${esc(t.scheduleDate)} · ${esc(t.name)}</strong>${t.details ? ` — ${esc(t.details)}` : ""}</li>`).join("")}</ul></div>`
-  ).join("") + ((plan.topics || []).length ? `<div class="review-phase"><div class="review-phase-title">Other topics</div><ul>${plan.topics.map(t => `<li><strong>${esc(t.scheduleDate)} · ${esc(t.name)}</strong>${t.details ? ` — ${esc(t.details)}` : ""}</li>`).join("")}</ul></div>` : "");
+    `<div class="review-phase"><div class="review-phase-title">${esc(phase.name)}</div>${phase.details ? `<p>${esc(phase.details)}</p>` : ""}<ul>${(phase.topics || []).map(t => `<li><strong>${esc(formatRoadmapDate(t.scheduleDate))} · ${esc(t.name)}</strong>${t.details ? ` — ${esc(t.details)}` : ""}</li>`).join("")}</ul></div>`
+  ).join("") + ((plan.topics || []).length ? `<div class="review-phase"><div class="review-phase-title">Other topics</div><ul>${plan.topics.map(t => `<li><strong>${esc(formatRoadmapDate(t.scheduleDate))} · ${esc(t.name)}</strong>${t.details ? ` — ${esc(t.details)}` : ""}</li>`).join("")}</ul></div>` : "");
   $("#roadmapReview").hidden = false;
   $("#roadmapReview").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -98,16 +115,16 @@ function fileToBase64(file) {
 }
 roadmapSubmit.addEventListener("click", async () => {
   const file = roadmapFileInput.files?.[0];
-  const startDate = roadmapStart.value;
-  const endDate = roadmapEnd.value;
+  const startDate = parseRoadmapDate(roadmapStart.value);
+  const endDate = parseRoadmapDate(roadmapEnd.value);
   if (!file) return setRoadmapStatus("Choose your syllabus file first.", "error");
-  if (!startDate || !endDate || startDate > endDate) return setRoadmapStatus("Choose a valid start date and finish date.", "error");
+  if (!startDate || !endDate || startDate > endDate) return setRoadmapStatus("Enter valid dates in DD/MM/YYYY format, with the finish date on or after the start date.", "error");
   if (!["application/pdf","image/png","image/jpeg","image/webp"].includes(file.type)) return setRoadmapStatus("Use a PDF, PNG, JPEG or WebP file.", "error");
   if (file.size > 3 * 1024 * 1024) return setRoadmapStatus("Keep the file under 3 MB. For a large syllabus, export selected pages or use screenshots.", "error");
   roadmapSubmit.disabled = true;
   $("#roadmapReview").hidden = true;
   try {
-    setRoadmapStatus("Gemini is reading your syllabus and planning the available days…");
+    setRoadmapStatus("Creating your study roadmap and organising the available days…");
     let payload;
     if (file.type === "application/pdf") {
       payload = { mimeType:file.type, data:await fileToBase64(file), name:file.name };
@@ -121,7 +138,7 @@ roadmapSubmit.addEventListener("click", async () => {
     const response = await fetch(apiUrl, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({file:payload,startDate,endDate}) });
     const result = await response.json().catch(() => ({error:"The server returned an unreadable response."}));
     if (!response.ok) throw new Error(result.error || "Could not generate the roadmap.");
-    if (!result.plan || !Array.isArray(result.plan.phases)) throw new Error("Gemini returned an incomplete roadmap. Try again.");
+    if (!result.plan || !Array.isArray(result.plan.phases)) throw new Error("The roadmap could not be completed. Please try again.");
     generatedRoadmapDraft = result.plan;
     renderRoadmapPreview(generatedRoadmapDraft);
     setRoadmapStatus("Roadmap generated. Review the dates and tasks before adding it to SemReady.", "success");
@@ -134,13 +151,13 @@ roadmapSubmit.addEventListener("click", async () => {
 $("#saveRoadmapBtn").addEventListener("click", () => {
   if (!generatedRoadmapDraft) return;
   const plan = generatedRoadmapDraft;
-  const subject = { id:uid(), name:plan.name || "Study roadmap", description:plan.description || plan.summary || "", deadline:roadmapEnd.value, color:"violet", items:[] };
+  const subject = { id:uid(), name:plan.name || "Study roadmap", description:plan.description || plan.summary || "", deadline:parseRoadmapDate(roadmapEnd.value), color:"violet", items:[] };
   (plan.phases || []).forEach(phase => {
     const phaseId = uid();
     subject.items.push({id:phaseId,kind:"phase",name:phase.name,details:phase.details||"",phaseId:"",done:false});
-    (phase.topics || []).forEach(topic => subject.items.push({id:uid(),kind:"topic",name:topic.name,details:topic.details||"",scheduleDate:topic.scheduleDate||roadmapStart.value,phaseId,done:false}));
+    (phase.topics || []).forEach(topic => subject.items.push({id:uid(),kind:"topic",name:topic.name,details:topic.details||"",scheduleDate:topic.scheduleDate||parseRoadmapDate(roadmapStart.value),phaseId,done:false}));
   });
-  (plan.topics || []).forEach(topic => subject.items.push({id:uid(),kind:"topic",name:topic.name,details:topic.details||"",scheduleDate:topic.scheduleDate||roadmapStart.value,phaseId:"",done:false}));
+  (plan.topics || []).forEach(topic => subject.items.push({id:uid(),kind:"topic",name:topic.name,details:topic.details||"",scheduleDate:topic.scheduleDate||parseRoadmapDate(roadmapStart.value),phaseId:"",done:false}));
   state.subjects.push(subject);
   save();
   closeDialog("#roadmapDialog");

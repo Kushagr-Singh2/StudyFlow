@@ -248,17 +248,18 @@
   <dialog id="roadmapDialog">
     <div class="import-dialog">
       <div class="dialog-heading">
-        <div><p class="eyebrow">GEMINI STUDY PLANNER</p><h2>Generate a study roadmap</h2></div>
+        <div><p class="eyebrow">AI STUDY PLANNER</p><h2>Generate a study roadmap</h2></div>
         <button class="icon-button" type="button" data-close="roadmapDialog">×</button>
       </div>
-      <p class="muted">Upload your syllabus. Gemini will organise its topics into a dated checklist based on your preparation window.</p>
+      <p class="muted">Upload your syllabus to create a dated checklist tailored to your preparation window.</p>
       <label for="syllabusFile">Syllabus file (PDF or screenshots)</label>
       <input id="syllabusFile" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" required />
       <p class="hint">For best results, upload a clear syllabus PDF. Keep files under 3 MB.</p>
       <div class="form-row">
-        <div><label for="roadmapStartDate">When do you want to start? *</label><input id="roadmapStartDate" type="date" required /></div>
-        <div><label for="roadmapEndDate">Finish by *</label><input id="roadmapEndDate" type="date" required /></div>
+        <div><label for="roadmapStartDate">When do you want to start? *</label><input id="roadmapStartDate" type="text" inputmode="numeric" autocomplete="off" placeholder="DD/MM/YYYY" aria-describedby="roadmapDateHint" maxlength="10" required /></div>
+        <div><label for="roadmapEndDate">Finish by *</label><input id="roadmapEndDate" type="text" inputmode="numeric" autocomplete="off" placeholder="DD/MM/YYYY" aria-describedby="roadmapDateHint" maxlength="10" required /></div>
       </div>
+      <p class="hint" id="roadmapDateHint">Enter dates as DD/MM/YYYY.</p>
       <div id="roadmapStatus" class="import-status" aria-live="polite"></div>
       <div class="dialog-actions">
         <button class="button ghost" type="button" data-close="roadmapDialog">Cancel</button>

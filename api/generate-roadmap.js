@@ -83,7 +83,7 @@ Return a concise subject name, a useful description, and a summary explaining th
       ] }],
       config: { responseMimeType: "application/json", responseSchema: roadmapSchema, temperature: 0.2 }
     });
-    if (!response.text) return res.status(502).json({ error: "Gemini did not return a roadmap. Try a clearer or smaller syllabus." });
+    if (!response.text) return res.status(502).json({ error: "The AI service did not return a roadmap. Try a clearer or smaller syllabus." });
     const plan = JSON.parse(response.text);
     plan.phases = Array.isArray(plan.phases) ? plan.phases : [];
     plan.topics = Array.isArray(plan.topics) ? plan.topics : [];
