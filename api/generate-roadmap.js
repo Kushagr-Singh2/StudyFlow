@@ -55,13 +55,12 @@ export default async function handler(req, res) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(503).json({ error: "AI roadmap generation is temporarily unavailable." });
 
-  const { file, startDate, endDate } = req.body || {};
-  if (!file?.data || !allowedTypes.includes(file.mimeType)) {
-    return res.status(400).json({ error: "Upload a PDF, PNG, JPEG, or WebP syllabus." });
-  }
-  if (Buffer.byteLength(file.data, "base64") > MAX_FILE_BYTES) {
-    return res.status(413).json({ error: "Keep the syllabus file under 3 MB and try again." });
-  }
+  const { file, syllabusText, startDate, endDate } = req.body || {};
+  const hasFile = Boolean(file?.data && allowedTypes.includes(file.mimeType));
+  const hasText = typeof syllabusText === "string" && syllabusText.trim().length >= 100;
+  if (!hasFile && !hasText) return res.status(400).json({ error: "Upload a PDF, PNG, JPEG, or WebP syllabus, or provide readable syllabus text." });
+  if (hasFile && Buffer.byteLength(file.data, "base64") > MAX_FILE_BYTES) return res.status(413).json({ error: "Keep the syllabus file under 3 MB and try again." });
+  if (hasText && syllabusText.length > 100000) return res.status(413).json({ error: "The extracted syllabus text is too long. Shorten it and try again." });
   if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate || "") || !/^\d{4}-\d{2}-\d{2}$/.test(endDate || "") || startDate > endDate) {
     return res.status(400).json({ error: "Choose a valid start date and finish date." });
   }
@@ -75,14 +74,30 @@ Every checklist topic must have scheduleDate in YYYY-MM-DD format between ${star
 Return a concise subject name, a useful description, and a summary explaining the scheduling approach. If the syllabus is unreadable or contains too little content to build a grounded plan, return the best grounded extraction and mention the limitation in summary. Return JSON matching the schema only.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
-      contents: [{ role: "user", parts: [
-        { inlineData: { mimeType: file.mimeType, data: file.data } },
-        { text: prompt }
-      ] }],
-      config: { responseMimeType: "application/json", responseSchema: roadmapSchema, temperature: 0.2 }
-    });
+    const parts = hasFile ? [{ inlineData: { mimeType: file.mimeType, data: file.data } }, { text: prompt }] : [{ text: `${prompt}\n\nSYLLABUS TEXT (extracted locally from the user's PDF):\n${syllabusText}` }];
+    let response;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        response = await Promise.race([
+          ai.models.generateContent({
+            model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
+            contents: [{ role: "user", parts }],
+            config: { responseMimeType: "application/json", responseSchema: roadmapSchema, temperature: 0.2 }
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(Object.assign(new Error("Gemini request timed out"), { status: 504 })), 24000))
+        ]);
+        break;
+      } catch (error) {
+        const status = Number(error?.status || error?.code || error?.response?.status || 0);
+        const retryable = status === 503 || status === 502 || /overloaded|high demand|temporarily unavailable/i.test(error?.message || "");
+        if (attempt === 0 && retryable) {
+          console.warn("Gemini temporarily unavailable; retrying once.");
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          continue;
+        }
+        throw error;
+      }
+    }
     if (!response.text) return res.status(502).json({ error: "The AI service did not return a roadmap. Try a clearer or smaller syllabus." });
     const plan = JSON.parse(response.text);
     plan.phases = Array.isArray(plan.phases) ? plan.phases : [];
@@ -97,7 +112,10 @@ Return a concise subject name, a useful description, and a summary explaining th
     plan.deadline = endDate;
     return res.status(200).json({ plan });
   } catch (error) {
-    console.error("Roadmap generation failed:", error?.message || error);
-    return res.status(500).json({ error: "Could not generate the roadmap. Check your connection and try again." });
+    const status = Number(error?.status || error?.code || error?.response?.status || 0);
+    console.error("Roadmap generation failed:", status || "unknown", error?.message || error);
+    if (status === 429) return res.status(429).json({ error: "AI request limit reached for now. Please try again after your limit resets." });
+    if (status === 503 || status === 502 || status === 504 || /timed out|overloaded|high demand|temporarily unavailable/i.test(error?.message || "")) return res.status(503).json({ error: "Gemini is temporarily busy. Your syllabus is safe; please try again shortly or create a basic checklist." });
+    return res.status(500).json({ error: "Could not generate the roadmap. Please try again." });
   }
 }

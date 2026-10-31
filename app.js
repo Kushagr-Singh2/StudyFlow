@@ -20,11 +20,11 @@ function setView(view){$$(".view").forEach(v=>v.classList.toggle("active",v.id==
 function subjectIcon(name){return (name.trim()[0]||"S").toUpperCase()}
 function subjectCard(s){const p=progress(s);return `<article class="subject-card"><div class="subject-card-top"><div class="subject-badge ${esc(s.color)}">${esc(subjectIcon(s.name))}</div><button class="more-btn" title="Delete subject" data-delete-subject="${s.id}">⋯</button></div><h3>${esc(s.name)}</h3><p class="description">${esc(s.description||"Keep building your knowledge.")}</p><div class="progress-row"><span>${p.done} of ${p.total} topics completed</span><strong>${p.pct}%</strong></div><div class="progress-track"><div class="progress-fill" style="width:${p.pct}%"></div></div><div class="subject-card-bottom"><span>${s.deadline?"Target: "+esc(s.deadline):"No target date"}</span><button data-open-subject="${s.id}">Open plan →</button></div></article>`}
 function renderDashboard(){const stats=totalStats();$("#statSubjects").textContent=stats.subjects;$("#statCompleted").innerHTML=`${stats.done} <small>/ ${stats.total}</small>`;$("#statProgress").textContent=stats.pct+"%";$("#dashboardSubjects").innerHTML=state.subjects.slice(0,6).map(subjectCard).join("");$("#emptyDashboard").classList.toggle("show",!state.subjects.length);$("#dashboardSubjects").style.display=state.subjects.length?"grid":"none";$("#dashboardSubjects").style.marginBottom=state.subjects.length?"0":"0"}
-function renderSubjects(){const container=$("#allSubjects");container.innerHTML=state.subjects.map(s=>{const p=progress(s);const phases=s.items.filter(i=>i.kind==="phase");const loose=s.items.filter(i=>i.kind==="topic"&&!i.phaseId);const expanded=expandedSubjectIds.has(s.id);let inner="";phases.forEach(phase=>{const topics=s.items.filter(i=>i.kind==="topic"&&i.phaseId===phase.id);const done=topics.filter(t=>t.done).length;inner+=`<div class="phase"><div class="phase-header"><button class="phase-toggle" data-toggle-phase="${phase.id}" data-subject="${s.id}" aria-label="Toggle ${esc(phase.name)} phase">⌄</button><span class="phase-title">${esc(phase.name)}</span><span class="phase-count">${done}/${topics.length}</span><button class="topic-tool" data-edit-topic="${phase.id}" data-subject="${s.id}" title="Edit phase">✎</button></div><div class="topic-list" data-phase-list="${phase.id}">${topics.map(t=>topicRow(t,s.id)).join("")||'<div class="no-topics">No topics in this phase yet.</div>'}<button class="add-topic-inline" data-add-topic="${s.id}" data-phase="${phase.id}">＋ Add topic to phase</button></div></div>`});if(loose.length){inner+=`<div class="phase"><div class="phase-header"><span class="phase-title">General topics</span><span class="phase-count">${loose.filter(t=>t.done).length}/${loose.length}</span></div><div class="topic-list">${loose.map(t=>topicRow(t,s.id)).join("")}</div></div>`}const content=inner||'<div class="topic-list"><div class="no-topics">Add a phase or topic to begin.</div></div>';return `<section class="subject-block"><div class="subject-block-header"><button class="subject-collapse-toggle" data-toggle-subject="${s.id}" aria-expanded="${expanded}" aria-label="${expanded?'Collapse':'Expand'} ${esc(s.name)}">${expanded?'▾':'▸'}</button><div class="subject-badge ${esc(s.color)}">${esc(subjectIcon(s.name))}</div><div class="header-info"><h3>${esc(s.name)}</h3><p>${esc(s.description||"No description")} · ${p.done}/${p.total} topics complete</p></div><div class="progress-mini"><div class="progress-track"><div class="progress-fill" style="width:${p.pct}%"></div></div></div><div class="subject-block-actions"><button class="small-btn" data-add-phase="${s.id}">＋ Phase/topic</button><button class="small-btn" data-delete-subject="${s.id}">Delete</button></div></div><div class="subject-block-content" ${expanded?'':'hidden'}>${content}<div class="phase"><div class="topic-list"><button class="add-topic-inline" data-add-phase="${s.id}">＋ Add phase or topic</button></div></div></div></section>`}).join("");$("#emptySubjects").classList.toggle("show",!state.subjects.length);container.style.display=state.subjects.length?"block":"none"}
+function renderSubjects(){const container=$("#allSubjects");container.innerHTML=state.subjects.map(s=>{const p=progress(s);const phases=s.items.filter(i=>i.kind==="phase");const loose=s.items.filter(i=>i.kind==="topic"&&!i.phaseId);const expanded=expandedSubjectIds.has(s.id);let inner="";phases.forEach(phase=>{const topics=s.items.filter(i=>i.kind==="topic"&&i.phaseId===phase.id);const done=topics.filter(t=>t.done).length;inner+=`<div class="phase"><div class="phase-header"><button class="phase-toggle" data-toggle-phase="${phase.id}" data-subject="${s.id}" aria-label="Toggle ${esc(phase.name)} phase">⌄</button><span class="phase-title">${esc(phase.name)}</span><span class="phase-count">${done}/${topics.length}</span><button class="topic-tool" data-edit-topic="${phase.id}" data-subject="${s.id}" title="Edit phase">✎</button></div><div class="topic-list" data-phase-list="${phase.id}">${topics.map(t=>topicRow(t,s.id)).join("")||'<div class="no-topics">No topics in this phase yet.</div>'}<button class="add-topic-inline" data-add-topic="${s.id}" data-phase="${phase.id}">＋ Add topic to phase</button></div></div>`});if(loose.length){inner+=`<div class="phase"><div class="phase-header"><span class="phase-title">General topics</span><span class="phase-count">${loose.filter(t=>t.done).length}/${loose.length}</span></div><div class="topic-list">${loose.map(t=>topicRow(t,s.id)).join("")}</div></div>`}const content=inner||'<div class="topic-list"><div class="no-topics">Add a phase or topic to begin.</div></div>';const retryAction=s.planMode==="basic"&&s.sourceText?`<button class="small-btn" data-retry-roadmap="${s.id}">✦ Convert to AI roadmap</button>`:"";return `<section class="subject-block"><div class="subject-block-header"><button class="subject-collapse-toggle" data-toggle-subject="${s.id}" aria-expanded="${expanded}" aria-label="${expanded?'Collapse':'Expand'} ${esc(s.name)}">${expanded?'▾':'▸'}</button><div class="subject-badge ${esc(s.color)}">${esc(subjectIcon(s.name))}</div><div class="header-info"><h3>${esc(s.name)}</h3><p>${esc(s.description||"No description")} · ${p.done}/${p.total} topics complete</p></div><div class="progress-mini"><div class="progress-track"><div class="progress-fill" style="width:${p.pct}%"></div></div></div><div class="subject-block-actions">${retryAction}<button class="small-btn" data-add-phase="${s.id}">＋ Phase/topic</button><button class="small-btn" data-delete-subject="${s.id}">Delete</button></div></div><div class="subject-block-content" ${expanded?'':'hidden'}>${content}<div class="phase"><div class="topic-list"><button class="add-topic-inline" data-add-phase="${s.id}">＋ Add phase or topic</button></div></div></div></section>`}).join("");$("#emptySubjects").classList.toggle("show",!state.subjects.length);container.style.display=state.subjects.length?"block":"none"}
 function topicRow(t,sid){return `<div class="topic-row ${t.done?"completed":""}"><input class="topic-check" type="checkbox" aria-label="Mark ${esc(t.name)} complete" data-toggle-topic="${t.id}" data-subject="${sid}" ${t.done?"checked":""}><div class="topic-copy"><strong>${esc(t.name)}</strong>${t.scheduleDate?`<div class="topic-schedule">📅 ${esc(t.scheduleDate)}</div>`:""}${t.details?`<div class="topic-details">${esc(t.details)}</div>`:""}</div><div class="topic-tools"><button class="topic-tool" data-edit-topic="${t.id}" data-subject="${sid}" title="Edit">✎</button></div></div>`}
 function renderFocus(){const picker=$("#focusPicker");picker.innerHTML=state.subjects.map(s=>{const pending=allTopics(s).filter(t=>!t.done);return `<div class="picker-subject"><div class="picker-subject-title">${esc(s.name)}</div>${pending.length?pending.map(t=>`<label class="picker-topic"><input type="checkbox" data-focus-add="${t.id}" data-subject="${s.id}" ${state.focus.some(f=>f.topicId===t.id&&f.subjectId===s.id)?"checked":""}>${esc(t.name)}</label>`).join(""):'<div class="empty-small">All topics completed. Nice work!</div>'}</div>`}).join("")||'<div class="empty-small">Create a subject first, then select topics to focus on.</div>';$("#focusDate").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});$("#sessionNote").value=state.sessionNote||"";const items=state.focus.map(f=>{const s=state.subjects.find(x=>x.id===f.subjectId);const t=s?.items.find(x=>x.id===f.topicId&&x.kind==="topic");return s&&t?{s,t}:null}).filter(Boolean);$("#todayList").innerHTML=items.map(({s,t})=>`<div class="today-item"><input class="topic-check" type="checkbox" data-toggle-topic="${t.id}" data-subject="${s.id}" ${t.done?"checked":""}><div class="today-copy">${esc(t.name)}<small>${esc(s.name)}</small></div><button data-focus-remove="${t.id}" data-subject="${s.id}" title="Remove from focus">×</button></div>`).join("")||'<div class="empty-small">Nothing selected yet. Choose a few topics on the left.</div>'}
 function renderAll(){renderDashboard();renderSubjects();if($("#todayView").classList.contains("active"))renderFocus()}
-function addSubject(data){const subject={id:uid(),name:data.name,description:data.description,deadline:data.deadline,color:data.color,items:[]};state.subjects.push(subject);expandedSubjectIds.add(subject.id);save();showToast("Subject created")}
+function addSubject(data){const subject={id:uid(),name:data.name,description:data.description,deadline:data.deadline,color:data.color,items:[]};(data.topics||[]).forEach(name=>subject.items.push({id:uid(),kind:"topic",name,details:"",phaseId:"",done:false}));if(data.sourceText){subject.sourceText=data.sourceText;subject.planMode="basic";subject.roadmapStartDate=data.startDate||"";}state.subjects.push(subject);expandedSubjectIds.add(subject.id);save();showToast(data.topics?.length?"Basic checklist created":"Subject created")}
 function openTopicDialog(subjectId,phaseId=""){const s=state.subjects.find(x=>x.id===subjectId);if(!s)return;expandedSubjectIds.add(subjectId);renderSubjects();$("#topicSubjectId").value=subjectId;$("#topicName").value="";$("#topicDetails").value="";$("#topicKind").value="phase";populatePhaseSelect(s,phaseId);$("#topicDialogTitle").textContent="Add a phase or topic";openDialog("#topicDialog")}
 function populatePhaseSelect(s,selected=""){const select=$("#topicPhase");select.innerHTML='<option value="">No phase / top level</option>'+s.items.filter(i=>i.kind==="phase").map(p=>`<option value="${p.id}" ${selected===p.id?"selected":""}>${esc(p.name)}</option>`).join("");select.disabled=$("#topicKind").value==="phase"}
 function createTopic(subjectId,kind,name,details,phaseId){const s=state.subjects.find(x=>x.id===subjectId);if(!s)return;s.items.push({id:uid(),kind,name,details,phaseId:kind==="topic"?phaseId:"",done:false});save();showToast(kind==="phase"?"Phase added":"Topic added")}
@@ -35,12 +35,50 @@ function deleteSubject(id){const s=state.subjects.find(x=>x.id===id);if(!s)retur
 function exportBackup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="semready-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(a.href);showToast("Backup exported")}
 function importBackup(file){const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!data||!Array.isArray(data.subjects))throw Error();if(!confirm("Replace the current SemReady data with this backup? Export your current data first if you need it."))return;state.subjects=data.subjects;state.focus=Array.isArray(data.focus)?data.focus:[];state.sessionNote=data.sessionNote||"";save();showToast("Backup imported")}catch{alert("That file doesn't look like a valid SemReady backup.")}};reader.readAsText(file)}
 
-$("#subjectForm").addEventListener("submit",e=>{e.preventDefault();const name=$("#subjectName").value.trim();if(!name)return;addSubject({name,description:$("#subjectDescription").value.trim(),deadline:$("#subjectDeadline").value,color:$("#subjectColor").value});$("#subjectDialog").close();e.target.reset()});
+let basicExtractedFile = null;
+let basicExtractedText = "";
+let basicExtractedTopics = [];
+const basicFileInput = $("#basicSyllabusFile");
+const basicExtractStatus = $("#basicExtractStatus");
+const basicExtractPreview = $("#basicExtractPreview");
+const createBasicChecklistBtn = $("#createBasicChecklistBtn");
+function resetBasicExtraction(message="Choose a PDF to extract its topics.") {
+  basicExtractedFile = null; basicExtractedText = ""; basicExtractedTopics = [];
+  basicExtractStatus.textContent = message; basicExtractStatus.className = "import-status";
+  basicExtractPreview.hidden = true; basicExtractPreview.innerHTML = "";
+  createBasicChecklistBtn.disabled = true;
+}
+basicFileInput.addEventListener("change", async()=>{
+  const file=basicFileInput.files?.[0]; resetBasicExtraction();
+  if(!file)return;
+  if(file.type!=="application/pdf"){resetBasicExtraction("Please choose a PDF syllabus.");basicExtractStatus.classList.add("error");return;}
+  if(file.size>3*1024*1024){resetBasicExtraction("Keep the PDF under 3 MB.");basicExtractStatus.classList.add("error");return;}
+  if(!$("#subjectName").value.trim())$("#subjectName").value=(file.name||"").replace(/\.pdf$/i,"").slice(0,80);
+  basicExtractStatus.textContent="Reading syllabus locally…";
+  try {
+    basicExtractedText=await extractPdfText(file);
+    basicExtractedTopics=textToChecklistTopics(basicExtractedText);
+    if(basicExtractedTopics.length<3)throw new Error("SemReady couldn't find enough selectable text. This PDF may be scanned or image-only.");
+    basicExtractedFile=file;
+    basicExtractStatus.textContent=`Found ${basicExtractedTopics.length} topic/section lines. Ready to create your checklist.`;
+    basicExtractStatus.classList.add("success");
+    basicExtractPreview.hidden=false;
+    basicExtractPreview.innerHTML=`<strong>Preview</strong><ul>${basicExtractedTopics.slice(0,6).map(t=>`<li>${esc(t)}</li>`).join("")}</ul>${basicExtractedTopics.length>6?`<span>+ ${basicExtractedTopics.length-6} more</span>`:""}`;
+    createBasicChecklistBtn.disabled=false;
+  } catch(error) { resetBasicExtraction(error.message); basicExtractStatus.classList.add("error"); }
+});
+$("#subjectForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  if(!basicExtractedFile||!basicExtractedText||basicExtractedTopics.length<3){basicExtractStatus.textContent="Choose a readable text-based PDF first.";basicExtractStatus.classList.add("error");return;}
+  const name=$("#subjectName").value.trim()||(basicExtractedFile.name||"Study checklist").replace(/\.pdf$/i,"").slice(0,80);
+  addSubject({name,description:$("#subjectDescription").value.trim()||"Topics extracted from your syllabus.",color:$("#subjectColor").value,topics:basicExtractedTopics,sourceText:basicExtractedText});
+  $("#subjectDialog").close();e.target.reset();resetBasicExtraction();
+});
 $("#topicForm").addEventListener("submit",e=>{e.preventDefault();const name=$("#topicName").value.trim();if(!name)return;createTopic($("#topicSubjectId").value,$("#topicKind").value,name,$("#topicDetails").value.trim(),$("#topicPhase").value);$("#topicDialog").close();e.target.reset()});
 $("#editTopicForm").addEventListener("submit",e=>{e.preventDefault();const {item}=findItem($("#editSubjectId").value,$("#editTopicId").value);if(item){item.name=$("#editTopicName").value.trim();item.details=$("#editTopicDetails").value.trim();save();showToast("Changes saved")}$("#editTopicDialog").close()});
 $("#topicKind").addEventListener("change",()=>{const s=state.subjects.find(x=>x.id===$("#topicSubjectId").value);if(s)populatePhaseSelect(s)});
 $("#deleteTopicBtn").addEventListener("click",()=>{if(confirm("Delete this phase or topic?")){deleteTopic($("#deleteTopicBtn").dataset.subject,$("#deleteTopicBtn").dataset.deleteTopic);$("#editTopicDialog").close()}});
-document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.view)setView(b.dataset.view);if(b.dataset.close)closeDialog("#"+b.dataset.close);if(b.id==="addSubjectTop"||b.id==="addSubjectBtn"||b.id==="emptyAddSubject"||b.id==="emptyAddSubject2")openDialog("#subjectDialog");if(b.id==="viewAllSubjects")setView("subjects");if(b.id==="startTodayBtn")setView("today");if(b.dataset.openSubject){setView("subjects");expandedSubjectIds.add(b.dataset.openSubject);renderSubjects();document.querySelector(`[data-open-subject="${b.dataset.openSubject}"]`)?.scrollIntoView({behavior:"smooth",block:"center"})}if(b.dataset.toggleSubject){const id=b.dataset.toggleSubject;if(expandedSubjectIds.has(id))expandedSubjectIds.delete(id);else expandedSubjectIds.add(id);renderSubjects()}if(b.dataset.addPhase)openTopicDialog(b.dataset.addPhase);if(b.dataset.addTopic)openTopicDialog(b.dataset.addTopic,b.dataset.phase||"");if(b.dataset.editTopic)editTopic(b.dataset.subject,b.dataset.editTopic);if(b.dataset.deleteSubject)deleteSubject(b.dataset.deleteSubject);if(b.dataset.deleteTopic && b.id!=="deleteTopicBtn")deleteTopic(b.dataset.subject,b.dataset.deleteTopic);if(b.dataset.togglePhase){const list=document.querySelector(`[data-phase-list="${b.dataset.togglePhase}"]`);if(list){list.hidden=!list.hidden;b.textContent=list.hidden?"›":"⌄"}}if(b.dataset.focusRemove){state.focus=state.focus.filter(f=>!(f.topicId===b.dataset.focusRemove&&f.subjectId===b.dataset.subject));save()};if(b.id==="clearFocus"){state.focus=[];save();showToast("Today's list cleared")}});
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.view)setView(b.dataset.view);if(b.dataset.close)closeDialog("#"+b.dataset.close);if(b.id==="createChecklistTop"||b.id==="subjectsCreateChecklist"||b.id==="emptyCreateChecklist"||b.id==="addSubjectTop"||b.id==="addSubjectBtn"||b.id==="emptyAddSubject"||b.id==="emptyAddSubject2")openDialog("#subjectDialog");if(b.id==="emptyGenerateRoadmap"||b.id==="subjectsGenerateRoadmap")openRoadmapDialog();if(b.dataset.retryRoadmap)retrySavedRoadmap(b.dataset.retryRoadmap);if(b.id==="viewAllSubjects")setView("subjects");if(b.id==="startTodayBtn")setView("today");if(b.dataset.openSubject){setView("subjects");expandedSubjectIds.add(b.dataset.openSubject);renderSubjects();document.querySelector(`[data-open-subject="${b.dataset.openSubject}"]`)?.scrollIntoView({behavior:"smooth",block:"center"})}if(b.dataset.toggleSubject){const id=b.dataset.toggleSubject;if(expandedSubjectIds.has(id))expandedSubjectIds.delete(id);else expandedSubjectIds.add(id);renderSubjects()}if(b.dataset.addPhase)openTopicDialog(b.dataset.addPhase);if(b.dataset.addTopic)openTopicDialog(b.dataset.addTopic,b.dataset.phase||"");if(b.dataset.editTopic)editTopic(b.dataset.subject,b.dataset.editTopic);if(b.dataset.deleteSubject)deleteSubject(b.dataset.deleteSubject);if(b.dataset.deleteTopic && b.id!=="deleteTopicBtn")deleteTopic(b.dataset.subject,b.dataset.deleteTopic);if(b.dataset.togglePhase){const list=document.querySelector(`[data-phase-list="${b.dataset.togglePhase}"]`);if(list){list.hidden=!list.hidden;b.textContent=list.hidden?"›":"⌄"}}if(b.dataset.focusRemove){state.focus=state.focus.filter(f=>!(f.topicId===b.dataset.focusRemove&&f.subjectId===b.dataset.subject));save()};if(b.id==="clearFocus"){state.focus=[];save();showToast("Today's list cleared")}});
 document.addEventListener("change",e=>{const el=e.target;if(el.dataset.toggleTopic){const {item}=findItem(el.dataset.subject,el.dataset.toggleTopic);if(item){item.done=el.checked;save();showToast(item.done?"Topic completed":"Topic reopened")}}if(el.dataset.focusAdd){const f={topicId:el.dataset.focusAdd,subjectId:el.dataset.subject};if(el.checked){if(!state.focus.some(x=>x.topicId===f.topicId&&x.subjectId===f.subjectId))state.focus.push(f)}else state.focus=state.focus.filter(x=>!(x.topicId===f.topicId&&x.subjectId===f.subjectId));save()}});
 $("#sessionNote").addEventListener("input",e=>{state.sessionNote=e.target.value;localStorage.setItem(STORAGE_KEY,JSON.stringify(state))});
 $("#exportBtn").addEventListener("click",exportBackup);$("#importInput").addEventListener("change",e=>{if(e.target.files[0])importBackup(e.target.files[0]);e.target.value=""});
@@ -108,6 +146,7 @@ function openRoadmapDialog() {
   roadmapFileInput.value = "";
   generatedRoadmapDraft = null;
   $("#roadmapReview").hidden = true;
+  $("#roadmapFallback").hidden = true;
   setRoadmapStatus("Choose a syllabus and your preparation dates.");
   openDialog("#roadmapDialog");
 }
@@ -139,6 +178,65 @@ function fileToBase64(file) {
     reader.readAsDataURL(file);
   });
 }
+async function extractPdfText(file) {
+  if (!window.pdfjsLib) {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+      script.onload = resolve; script.onerror = () => reject(new Error("PDF text extraction could not load. You can paste topics manually instead."));
+      document.head.appendChild(script);
+    });
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const pdf = await window.pdfjsLib.getDocument({data:bytes}).promise;
+  const pages = [];
+  for (let pageNo=1; pageNo<=pdf.numPages; pageNo++) {
+    const page = await pdf.getPage(pageNo);
+    const content = await page.getTextContent();
+    pages.push(content.items.map(item=>item.str + (item.hasEOL ? "\n" : " ")).join("").replace(/[ \t]+\n/g,"\n"));
+  }
+  return pages.join("\n").replace(/[ \t]+/g," ").trim().slice(0,100000);
+}
+function textToChecklistTopics(text) {
+  const lines = text.split(/\n|(?=\b(?:Unit|Module|Chapter|Section)\s+\d+\b)|(?=\b\d+(?:\.\d+)*[.)]\s+)/i).map(x=>x.replace(/^\s*(?:[•●▪◦*-]|\d+(?:\.\d+)*[.)]?)\s*/,"").trim()).filter(x=>x.length>=3&&x.length<=140);
+  const seen = new Set();
+  return lines.filter(line=>{const key=line.toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).slice(0,120);
+}
+let fallbackSyllabusText = "";
+async function makeFallbackFromCurrentFile() {
+  const file = roadmapFileInput.files?.[0];
+  if (!file || file.type !== "application/pdf") throw new Error("Automatic basic extraction currently supports text-based PDF syllabi. Scanned PDFs are not supported in basic mode yet.");
+  fallbackSyllabusText = await extractPdfText(file);
+  const topics = textToChecklistTopics(fallbackSyllabusText);
+  if (topics.length < 3) throw new Error("This PDF may be scanned or image-based. SemReady could not find enough selectable text for a basic checklist.");
+  const name = (file.name||"Study plan").replace(/\.pdf$/i,"").slice(0,80);
+  const subject = {id:uid(),name,description:"Topics extracted locally from your syllabus. Review and edit the list as needed.",deadline:parseRoadmapDate(roadmapEnd.value)||"",color:"violet",items:topics.map(topic=>({id:uid(),kind:"topic",name:topic,details:"",phaseId:"",done:false})),sourceText:fallbackSyllabusText,planMode:"basic",roadmapStartDate:parseRoadmapDate(roadmapStart.value)||""};
+  state.subjects.push(subject);expandedSubjectIds.add(subject.id);save();closeDialog("#roadmapDialog");setView("subjects");showToast("Basic checklist created — you can convert it to an AI roadmap later.");
+}
+$("#makeFallbackChecklist").addEventListener("click", async()=>{
+  const button=$("#makeFallbackChecklist");button.disabled=true;
+  try { setRoadmapStatus("Extracting readable syllabus text locally…"); await makeFallbackFromCurrentFile(); }
+  catch(error){setRoadmapStatus(error.message,"error");}
+  finally{button.disabled=false;}
+});
+async function retrySavedRoadmap(subjectId) {
+  const subject=state.subjects.find(s=>s.id===subjectId);if(!subject?.sourceText)return;
+  const startDate=subject.roadmapStartDate||new Date().toISOString().slice(0,10);const endDate=subject.deadline||startDate;
+  if(!confirm(`Try converting "${subject.name}" into an AI roadmap now? Your existing checklist will be kept unless you approve the generated roadmap.`))return;
+  try {
+    showToast("Retrying AI roadmap generation…");
+    const url=(location.hostname==="localhost"||location.hostname==="127.0.0.1")?"http://localhost:3001/api/generate-roadmap":"/api/generate-roadmap";
+    const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({syllabusText:subject.sourceText,startDate,endDate})});
+    const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||"AI is temporarily unavailable.");
+    const plan=result.plan;if(!plan)throw new Error("No roadmap was returned.");
+    const replace=confirm("AI roadmap generated. Replace the current basic checklist with the roadmap? Choose Cancel to keep your existing checklist.");
+    if(!replace)return;
+    const items=[];(plan.phases||[]).forEach(phase=>{const phaseId=uid();items.push({id:phaseId,kind:"phase",name:phase.name,details:phase.details||"",phaseId:"",done:false});(phase.topics||[]).forEach(t=>items.push({id:uid(),kind:"topic",name:t.name,details:t.details||"",scheduleDate:t.scheduleDate||startDate,phaseId,done:false}));});(plan.topics||[]).forEach(t=>items.push({id:uid(),kind:"topic",name:t.name,details:t.details||"",scheduleDate:t.scheduleDate||startDate,phaseId:"",done:false}));
+    subject.name=plan.name||subject.name;subject.description=plan.description||plan.summary||subject.description;subject.items=items;subject.planMode="ai";delete subject.sourceText;delete subject.roadmapStartDate;save();showToast("Checklist converted to AI roadmap");
+  } catch(error){showToast(error.message||"AI is temporarily unavailable. Try again later.");}
+}
+
 roadmapSubmit.addEventListener("click", async () => {
   const file = roadmapFileInput.files?.[0];
   const startDate = parseRoadmapDate(roadmapStart.value);
@@ -150,7 +248,7 @@ roadmapSubmit.addEventListener("click", async () => {
   roadmapSubmit.disabled = true;
   $("#roadmapReview").hidden = true;
   try {
-    setRoadmapStatus("Creating your study roadmap and organising the available days…");
+    setRoadmapStatus("Creating your study roadmap and organising the available days… If Gemini is temporarily busy, SemReady will retry once automatically.");
     let payload;
     if (file.type === "application/pdf") {
       payload = { mimeType:file.type, data:await fileToBase64(file), name:file.name };
@@ -161,7 +259,7 @@ roadmapSubmit.addEventListener("click", async () => {
       if (payload.mimeType !== "image/jpeg") payload.mimeType = "image/jpeg";
     }
     const apiUrl = (location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "http://localhost:3001/api/generate-roadmap" : "/api/generate-roadmap";
-    const response = await fetch(apiUrl, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({file:payload,startDate,endDate}) });
+    const response = await fetch(apiUrl, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({file:payload,startDate,endDate}), signal:AbortSignal.timeout(52000) });
     const result = await response.json().catch(() => ({error:"The server returned an unreadable response."}));
     if (!response.ok) throw new Error(result.error || "Could not generate the roadmap.");
     if (!result.plan || !Array.isArray(result.plan.phases)) throw new Error("The roadmap could not be completed. Please try again.");
@@ -169,7 +267,8 @@ roadmapSubmit.addEventListener("click", async () => {
     renderRoadmapPreview(generatedRoadmapDraft);
     setRoadmapStatus("Roadmap generated. Review the dates and tasks before adding it to SemReady.", "success");
   } catch (error) {
-    setRoadmapStatus(error.message || "Could not generate the roadmap. Try again.", "error");
+    setRoadmapStatus((error.message || "Could not generate the roadmap.") + " You can try again later or use a basic checklist.", "error");
+    $("#roadmapFallback").hidden = !(roadmapFileInput.files?.[0]?.type === "application/pdf");
   } finally {
     roadmapSubmit.disabled = false;
   }

@@ -39,3 +39,15 @@ Never commit `.env` or paste API keys into source code. `.env.example` is a safe
 The dashboard includes **Generate with AI**, which accepts a syllabus PDF or image plus a start date and finish date. The server-side Gemini endpoint (`api/generate-roadmap.js`) creates a syllabus-grounded, dated checklist with time-aware allocation, practice, and revision where the available window permits. Users review the generated plan before saving it. The API key remains server-side in `GEMINI_API_KEY`.
 
 Syllabus uploads must be under 3 MB. The app stores topic dates with each checklist item. For local development, run `npm start`; the local Express server exposes `/api/generate-roadmap`.
+
+### Local environment
+
+Copy `.env.example` to `.env` and add your Gemini API key to `GEMINI_API_KEY`. Keep `.env` private and never commit it. The browser never receives the API key.
+
+### Checklist and AI roadmap modes
+
+- **Generate study roadmap** is the primary flow. The API retries one temporary Gemini 502/503 failure with a short delay and returns clearer rate-limit/availability errors.
+- **Basic checklist** lets students type topics or extract selectable text from a PDF locally in the browser. Scanned/image-only PDFs may need manual topic entry.
+- If AI roadmap generation fails for a PDF, students can create a basic checklist from locally extracted text. The source text is saved with that subject so they can choose **Convert to AI roadmap** later.
+- Existing `studyflow.v1` browser data remains compatible; new checklist metadata is additive.
+

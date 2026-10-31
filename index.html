@@ -102,11 +102,11 @@
           <h1 id="pageTitle">Dashboard</h1>
         </div>
         <div class="top-actions">
-          <button class="button primary" id="generateRoadmapBtn">✦ Generate with AI</button>
+          <button class="button primary" id="generateRoadmapBtn">✦ Generate study roadmap</button>
+          <button class="button ghost" id="createChecklistTop">＋ Checklist from syllabus</button>
           <button class="button ghost" id="importPlanBtn">Import screenshot</button>
           <button class="button ghost" id="exportBtn">Export backup</button>
           <label class="button ghost import-button">Import backup<input type="file" id="importInput" accept="application/json,.json" hidden></label>
-          <button class="button primary" id="addSubjectTop">＋ Add subject</button>
         </div>
       </header>
 
@@ -138,20 +138,21 @@
         <div id="dashboardSubjects" class="subject-grid"></div>
         <div id="emptyDashboard" class="empty-state">
           <div class="empty-icon">✦</div><h3>Your first study plan starts here</h3>
-          <p>Add a subject, split it into phases, and add the topics from your syllabus or a plan ChatGPT helped you make.</p>
-          <button class="button primary" id="emptyAddSubject">＋ Create your first subject</button>
+          <p>Upload a syllabus to generate a personalised AI roadmap, or extract its topics into a simple checklist.</p>
+          <button class="button primary" id="emptyGenerateRoadmap">✦ Generate my first roadmap</button>
+          <button class="button ghost" id="emptyCreateChecklist">Create checklist from syllabus</button>
         </div>
       </section>
 
       <section class="view" id="subjectsView">
         <div class="section-heading subject-page-heading">
           <div><p class="eyebrow">YOUR COURSES</p><h2>Subjects & topics</h2><p class="muted">Build a checklist for every course, project or skill.</p></div>
-          <button class="button primary" id="addSubjectBtn">＋ Add subject</button>
+          <button class="button primary" id="subjectsGenerateRoadmap">✦ Generate roadmap</button> <button class="button ghost" id="subjectsCreateChecklist">＋ Checklist from syllabus</button>
         </div>
         <div id="allSubjects"></div>
         <div id="emptySubjects" class="empty-state">
           <div class="empty-icon">☷</div><h3>No subjects yet</h3><p>Create a subject and add your first phase or topic.</p>
-          <button class="button primary" id="emptyAddSubject2">＋ Add a subject</button>
+          <button class="button primary" id="emptyAddSubject2">＋ Create checklist from syllabus</button>
         </div>
       </section>
 
@@ -211,16 +212,21 @@
 
   <dialog id="subjectDialog">
     <form method="dialog" id="subjectForm">
-      <div class="dialog-heading"><div><p class="eyebrow">NEW LEARNING PLAN</p><h2>Create a subject</h2></div><button class="icon-button" type="button" data-close="subjectDialog">×</button></div>
-      <label for="subjectName">Subject or skill name <span>*</span></label>
-      <input id="subjectName" required maxlength="80" placeholder="e.g. Data Structures & Algorithms" />
-      <label for="subjectDescription">What are you aiming for?</label>
-      <input id="subjectDescription" maxlength="160" placeholder="e.g. End-semester exam + practical coding" />
+      <div class="dialog-heading"><div><p class="eyebrow">BASIC CHECKLIST</p><h2>Create checklist from syllabus</h2></div><button class="icon-button" type="button" data-close="subjectDialog">×</button></div>
+      <p class="muted">Upload your syllabus and SemReady will extract its topics into a simple tick-off list. No AI roadmap, phases or study dates.</p>
+      <label for="basicSyllabusFile">Syllabus PDF <span>*</span></label>
+      <input id="basicSyllabusFile" type="file" accept="application/pdf" required />
+      <p class="hint">Text-based PDFs are processed locally in your browser. Scanned/image-only PDFs aren't supported in this basic mode yet.</p>
+      <div id="basicExtractStatus" class="import-status" aria-live="polite">Choose a PDF to extract its topics.</div>
+      <div id="basicExtractPreview" class="basic-extract-preview" hidden></div>
+      <label for="subjectName">Subject name</label>
+      <input id="subjectName" maxlength="80" placeholder="Automatically taken from the PDF filename" />
+      <label for="subjectDescription">Description (optional)</label>
+      <input id="subjectDescription" maxlength="160" placeholder="e.g. Semester 3 — Constitutional Law" />
       <div class="form-row">
-        <div><label for="subjectDeadline">Target date (optional)</label><input id="subjectDeadline" type="date" /></div>
         <div><label for="subjectColor">Colour</label><select id="subjectColor"><option value="violet">Violet</option><option value="blue">Blue</option><option value="green">Green</option><option value="orange">Orange</option><option value="pink">Pink</option></select></div>
       </div>
-      <div class="dialog-actions"><button class="button ghost" type="button" data-close="subjectDialog">Cancel</button><button class="button primary" type="submit">Create subject</button></div>
+      <div class="dialog-actions"><button class="button ghost" type="button" data-close="subjectDialog">Cancel</button><button class="button primary" id="createBasicChecklistBtn" type="submit" disabled>Create checklist</button></div>
     </form>
   </dialog>
 
@@ -257,7 +263,7 @@
         <div><p class="eyebrow">AI STUDY PLANNER</p><h2>Generate a study roadmap</h2></div>
         <button class="icon-button" type="button" data-close="roadmapDialog">×</button>
       </div>
-      <p class="muted">Upload your syllabus to create a dated checklist tailored to your preparation window.</p>
+      <p class="muted">Upload your syllabus and SemReady will organise it into phases, dated topics and manageable study tasks. Prefer a simple list? Choose Basic checklist from the dashboard.</p>
       <label for="syllabusFile">Syllabus file (PDF or screenshots)</label>
       <input id="syllabusFile" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" required />
       <p class="hint">For best results, upload a clear syllabus PDF. Keep files under 3 MB.</p>
@@ -267,6 +273,7 @@
       </div>
       <p class="hint" id="roadmapDateHint">Enter dates as DD/MM/YYYY.</p>
       <div id="roadmapStatus" class="import-status" aria-live="polite"></div>
+      <div id="roadmapFallback" class="fallback-panel" hidden><h3>Start with a basic checklist?</h3><p class="muted">AI could not finish this time. We can extract readable PDF text locally and make a checklist now. You can retry AI later.</p><button class="button ghost" id="makeFallbackChecklist" type="button">Create basic checklist from syllabus</button></div>
       <div class="dialog-actions">
         <button class="button ghost" type="button" data-close="roadmapDialog">Cancel</button>
         <span class="spacer"></span>
