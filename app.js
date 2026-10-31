@@ -24,7 +24,7 @@ function renderSubjects(){const container=$("#allSubjects");container.innerHTML=
 function topicRow(t,sid){return `<div class="topic-row ${t.done?"completed":""}"><input class="topic-check" type="checkbox" aria-label="Mark ${esc(t.name)} complete" data-toggle-topic="${t.id}" data-subject="${sid}" ${t.done?"checked":""}><div class="topic-copy"><strong>${esc(t.name)}</strong>${t.scheduleDate?`<div class="topic-schedule">📅 ${esc(t.scheduleDate)}</div>`:""}${t.details?`<div class="topic-details">${esc(t.details)}</div>`:""}</div><div class="topic-tools"><button class="topic-tool" data-edit-topic="${t.id}" data-subject="${sid}" title="Edit">✎</button></div></div>`}
 function renderFocus(){const picker=$("#focusPicker");picker.innerHTML=state.subjects.map(s=>{const pending=allTopics(s).filter(t=>!t.done);return `<div class="picker-subject"><div class="picker-subject-title">${esc(s.name)}</div>${pending.length?pending.map(t=>`<label class="picker-topic"><input type="checkbox" data-focus-add="${t.id}" data-subject="${s.id}" ${state.focus.some(f=>f.topicId===t.id&&f.subjectId===s.id)?"checked":""}>${esc(t.name)}</label>`).join(""):'<div class="empty-small">All topics completed. Nice work!</div>'}</div>`}).join("")||'<div class="empty-small">Create a subject first, then select topics to focus on.</div>';$("#focusDate").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});$("#sessionNote").value=state.sessionNote||"";const items=state.focus.map(f=>{const s=state.subjects.find(x=>x.id===f.subjectId);const t=s?.items.find(x=>x.id===f.topicId&&x.kind==="topic");return s&&t?{s,t}:null}).filter(Boolean);$("#todayList").innerHTML=items.map(({s,t})=>`<div class="today-item"><input class="topic-check" type="checkbox" data-toggle-topic="${t.id}" data-subject="${s.id}" ${t.done?"checked":""}><div class="today-copy">${esc(t.name)}<small>${esc(s.name)}</small></div><button data-focus-remove="${t.id}" data-subject="${s.id}" title="Remove from focus">×</button></div>`).join("")||'<div class="empty-small">Nothing selected yet. Choose a few topics on the left.</div>'}
 function renderAll(){renderDashboard();renderSubjects();if($("#todayView").classList.contains("active"))renderFocus()}
-function addSubject(data){const subject={id:uid(),name:data.name,description:data.description,deadline:data.deadline,color:data.color,items:[]};(data.topics||[]).forEach(name=>subject.items.push({id:uid(),kind:"topic",name,details:"",phaseId:"",done:false}));if(data.sourceText){subject.sourceText=data.sourceText;subject.planMode="basic";subject.roadmapStartDate=data.startDate||"";}state.subjects.push(subject);expandedSubjectIds.add(subject.id);save();showToast(data.topics?.length?"Basic checklist created":"Subject created")}
+function addSubject(data){const subject={id:uid(),name:data.name,description:data.description,deadline:data.deadline,color:data.color,items:[]};if(Array.isArray(data.groups)&&data.groups.length){data.groups.forEach(group=>{const phaseId=uid();subject.items.push({id:phaseId,kind:"phase",name:group.name,details:"",phaseId:"",done:false});(group.topics||[]).forEach(name=>subject.items.push({id:uid(),kind:"topic",name,details:"",phaseId,done:false}))})}else (data.topics||[]).forEach(name=>subject.items.push({id:uid(),kind:"topic",name,details:"",phaseId:"",done:false}));if(data.sourceText){subject.sourceText=data.sourceText;subject.planMode="basic";subject.roadmapStartDate=data.startDate||"";}state.subjects.push(subject);expandedSubjectIds.add(subject.id);save();showToast(data.groups?.length||data.topics?.length?"Basic checklist created":"Subject created")}
 function openTopicDialog(subjectId,phaseId=""){const s=state.subjects.find(x=>x.id===subjectId);if(!s)return;expandedSubjectIds.add(subjectId);renderSubjects();$("#topicSubjectId").value=subjectId;$("#topicName").value="";$("#topicDetails").value="";$("#topicKind").value="phase";populatePhaseSelect(s,phaseId);$("#topicDialogTitle").textContent="Add a phase or topic";openDialog("#topicDialog")}
 function populatePhaseSelect(s,selected=""){const select=$("#topicPhase");select.innerHTML='<option value="">No phase / top level</option>'+s.items.filter(i=>i.kind==="phase").map(p=>`<option value="${p.id}" ${selected===p.id?"selected":""}>${esc(p.name)}</option>`).join("");select.disabled=$("#topicKind").value==="phase"}
 function createTopic(subjectId,kind,name,details,phaseId){const s=state.subjects.find(x=>x.id===subjectId);if(!s)return;s.items.push({id:uid(),kind,name,details,phaseId:kind==="topic"?phaseId:"",done:false});save();showToast(kind==="phase"?"Phase added":"Topic added")}
@@ -37,13 +37,13 @@ function importBackup(file){const reader=new FileReader();reader.onload=()=>{try
 
 let basicExtractedFile = null;
 let basicExtractedText = "";
-let basicExtractedTopics = [];
+let basicExtractedGroups = [];
 const basicFileInput = $("#basicSyllabusFile");
 const basicExtractStatus = $("#basicExtractStatus");
 const basicExtractPreview = $("#basicExtractPreview");
 const createBasicChecklistBtn = $("#createBasicChecklistBtn");
 function resetBasicExtraction(message="Choose a PDF to extract its topics.") {
-  basicExtractedFile = null; basicExtractedText = ""; basicExtractedTopics = [];
+  basicExtractedFile = null; basicExtractedText = ""; basicExtractedGroups = [];
   basicExtractStatus.textContent = message; basicExtractStatus.className = "import-status";
   basicExtractPreview.hidden = true; basicExtractPreview.innerHTML = "";
   createBasicChecklistBtn.disabled = true;
@@ -57,21 +57,22 @@ basicFileInput.addEventListener("change", async()=>{
   basicExtractStatus.textContent="Reading syllabus locally…";
   try {
     basicExtractedText=await extractPdfText(file);
-    basicExtractedTopics=textToChecklistTopics(basicExtractedText);
-    if(basicExtractedTopics.length<3)throw new Error("SemReady couldn't find enough selectable text. This PDF may be scanned or image-only.");
+    basicExtractedGroups=parseSyllabusGroups(basicExtractedText);
+    const topicCount=basicExtractedGroups.reduce((n,g)=>n+g.topics.length,0);
+    if(topicCount<3)throw new Error("SemReady couldn't identify a syllabus section with enough topics. This PDF may be scanned, image-only, or use an unusual handout layout.");
     basicExtractedFile=file;
-    basicExtractStatus.textContent=`Found ${basicExtractedTopics.length} topic/section lines. Ready to create your checklist.`;
+    basicExtractStatus.textContent=`Found ${topicCount} syllabus topics across ${basicExtractedGroups.length} sections. Review the preview, then create your checklist.`;
     basicExtractStatus.classList.add("success");
     basicExtractPreview.hidden=false;
-    basicExtractPreview.innerHTML=`<strong>Preview</strong><ul>${basicExtractedTopics.slice(0,6).map(t=>`<li>${esc(t)}</li>`).join("")}</ul>${basicExtractedTopics.length>6?`<span>+ ${basicExtractedTopics.length-6} more</span>`:""}`;
+    basicExtractPreview.innerHTML=`<strong>Extracted syllabus preview</strong>${basicExtractedGroups.slice(0,5).map(g=>`<div class="extract-group"><b>${esc(g.name)}</b><ul>${g.topics.slice(0,4).map(t=>`<li>${esc(t)}</li>`).join("")}</ul>${g.topics.length>4?`<span>+ ${g.topics.length-4} more topics</span>`:""}</div>`).join("")}${basicExtractedGroups.length>5?`<span>+ ${basicExtractedGroups.length-5} more sections</span>`:""}`;
     createBasicChecklistBtn.disabled=false;
   } catch(error) { resetBasicExtraction(error.message); basicExtractStatus.classList.add("error"); }
 });
 $("#subjectForm").addEventListener("submit",e=>{
   e.preventDefault();
-  if(!basicExtractedFile||!basicExtractedText||basicExtractedTopics.length<3){basicExtractStatus.textContent="Choose a readable text-based PDF first.";basicExtractStatus.classList.add("error");return;}
+  if(!basicExtractedFile||!basicExtractedText||!basicExtractedGroups.length){basicExtractStatus.textContent="Choose a readable text-based PDF first.";basicExtractStatus.classList.add("error");return;}
   const name=$("#subjectName").value.trim()||(basicExtractedFile.name||"Study checklist").replace(/\.pdf$/i,"").slice(0,80);
-  addSubject({name,description:$("#subjectDescription").value.trim()||"Topics extracted from your syllabus.",color:$("#subjectColor").value,topics:basicExtractedTopics,sourceText:basicExtractedText});
+  addSubject({name,description:$("#subjectDescription").value.trim()||"Topics extracted from your syllabus.",color:$("#subjectColor").value,groups:basicExtractedGroups,sourceText:basicExtractedText});
   $("#subjectDialog").close();e.target.reset();resetBasicExtraction();
 });
 $("#topicForm").addEventListener("submit",e=>{e.preventDefault();const name=$("#topicName").value.trim();if(!name)return;createTopic($("#topicSubjectId").value,$("#topicKind").value,name,$("#topicDetails").value.trim(),$("#topicPhase").value);$("#topicDialog").close();e.target.reset()});
@@ -198,25 +199,68 @@ async function extractPdfText(file) {
   }
   return pages.join("\n").replace(/[ \t]+/g," ").trim().slice(0,100000);
 }
-function textToChecklistTopics(text) {
-  const lines = text.split(/\n|(?=\b(?:Unit|Module|Chapter|Section)\s+\d+\b)|(?=\b\d+(?:\.\d+)*[.)]\s+)/i).map(x=>x.replace(/^\s*(?:[•●▪◦*-]|\d+(?:\.\d+)*[.)]?)\s*/,"").trim()).filter(x=>x.length>=3&&x.length<=140);
-  const seen = new Set();
-  return lines.filter(line=>{const key=line.toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).slice(0,120);
+function cleanSyllabusText(value){return String(value||"").replace(/[ﬁﬂ]/g,"fi").replace(/\u00ad/g,"").replace(/Tra\s+ic/gi,"Traffic").replace(/di\s+erent/gi,"different").replace(/o\s+ered/gi,"offered").replace(/\s+/g," ").replace(/\s+([,.;:])/g,"$1").trim()}
+function splitSyllabusClauses(value){
+  const out=[];let current="",depth=0;
+  for(const ch of cleanSyllabusText(value)){
+    if(ch==="(")depth++;if(ch===")")depth=Math.max(0,depth-1);
+    if(depth===0&&[",",";","."].includes(ch)){if(current.trim())out.push(current.trim());current="";}
+    else current+=ch;
+  }
+  if(current.trim())out.push(current.trim());return out;
+}
+function parseSyllabusGroups(fullText){
+  const text=String(fullText||"").replace(/\r/g,"\n").replace(/[\u2010-\u2015]/g,"-");
+  const startPatterns=[/(?:^|\n)\s*(?:[A-Z]\.\s*)?(?:detailed\s+)?syllabus\s*[:\-]?/i,/(?:^|\n)\s*(?:course\s+)?contents\s*[:\-]?/i,/(?:^|\n)\s*unit[- ]wise\s+syllabus\s*[:\-]?/i];
+  let start=-1;for(const re of startPatterns){const m=re.exec(text);if(m){start=m.index+m[0].length;break}}
+  let section=start>=0?text.slice(start):text;
+  const endRe=/(?:\n|\s{2,})(?:textbooks?|reference\s+books?|recommended\s+readings?|lecture\s+plan|course\s+articulation\s+matrix|assessment\s+plan)\s*[:.]?/i;
+  const end=endRe.exec(section);if(end)section=section.slice(0,end.index);
+  section=section.replace(/(Articles?\s*\d+\s*[-–]\s*\d+\))\s+(?=(?:Educational and Cultural Safeguards|Enforcing Rights|Directive Principles|Fundamental Duties)\b)/gi,"$1; ");
+  section=cleanSyllabusText(section.replace(/^[A-Z]\.\s*/i,""));
+  if(section.length<40){
+    const lines=text.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    const unitLines=lines.filter(x=>/^(?:unit|module|chapter)\s*(?:[-:]|\d)/i.test(x));
+    return unitLines.map(line=>{const m=line.match(/^(.*?)(?::|[-–])\s*(.*)$/);return{name:(m?.[1]||line).slice(0,100),topics:splitSyllabusClauses(m?.[2]||line)}}).filter(g=>g.topics.length);
+  }
+  const groups=[];let current=null;
+  const addGroup=(name)=>{name=cleanSyllabusText(name).replace(/\s+/g," ");if(!name)return null;let found=groups.find(g=>g.name.toLowerCase()===name.toLowerCase());if(found)return found;const g={name,topics:[]};groups.push(g);return g};
+  const addTopic=(group,value)=>{const topic=cleanSyllabusText(value).replace(/^(?:and|or)\s+/i,"").replace(/^[\s:,-]+|[\s,;.-]+$/g,"");if(topic&&topic.length>=3&&topic.length<=200)group.topics.push(topic)};
+  for(const raw of splitSyllabusClauses(section)){
+    const token=raw.replace(/^(?:and|or)\s+/i,"").trim();if(!token)continue;
+    const namedHeading=token.match(/^(Religious Freedom(?:\s*\([^)]*\))?|Educational and Cultural Safeguards(?:\s*\([^)]*\))?|Enforcing Rights(?:\s*\([^)]*\))?|Freedoms under Article 19|Right to Education|Directive Principles(?:\s*[-–][^:]*)?|Fundamental Duties(?:\s*[-–][^:]*)?)(.*)$/i);
+    if(namedHeading){current=addGroup(namedHeading[1]);const tail=(namedHeading[2]||"").replace(/^\s*[-–:]\s*/,"");if(tail)addTopic(current,tail);continue; }
+    if(token.includes(":")){
+      const parts=token.split(/:\s*/).map(x=>x.trim()).filter(Boolean);
+      if(parts.length>=2){
+        current=addGroup(parts[0]);addTopic(current,parts[1]);
+        for(let i=2;i<parts.length;i++){if(/^meaning and scope$/i.test(parts[i]))addTopic(current,parts[i]);else current=addGroup(parts[i]);}
+      }else addTopic(current||addGroup("Syllabus topics"),token);
+    }else addTopic(current||addGroup("Syllabus topics"),token);
+  }
+  const seenGroups=new Set();
+  return groups.map(g=>({name:g.name,topics:g.topics})).filter(g=>{
+    const key=g.name.toLowerCase();if(seenGroups.has(key))return false;seenGroups.add(key);
+    if(!g.topics.length&&/^(?:Religious Freedom|Educational and Cultural Safeguards)/i.test(g.name))g.topics.push(g.name);
+    const seen=new Set();g.topics=g.topics.filter(t=>{const k=t.toLowerCase().replace(/[^a-z0-9]+/g," ").trim();if(!k||seen.has(k))return false;seen.add(k);return true});return g.name.length>2&&g.topics.length>0;
+  }).slice(0,50);
 }
 let fallbackSyllabusText = "";
 async function makeFallbackFromCurrentFile() {
   const file = roadmapFileInput.files?.[0];
   if (!file || file.type !== "application/pdf") throw new Error("Automatic basic extraction currently supports text-based PDF syllabi. Scanned PDFs are not supported in basic mode yet.");
   fallbackSyllabusText = await extractPdfText(file);
-  const topics = textToChecklistTopics(fallbackSyllabusText);
-  if (topics.length < 3) throw new Error("This PDF may be scanned or image-based. SemReady could not find enough selectable text for a basic checklist.");
+  const groups = parseSyllabusGroups(fallbackSyllabusText);
+  const topicCount=groups.reduce((n,g)=>n+g.topics.length,0);
+  if (topicCount < 3) throw new Error("This PDF may be scanned or image-based, or SemReady couldn't identify its syllabus section. Try the Basic Checklist upload instead.");
   const name = (file.name||"Study plan").replace(/\.pdf$/i,"").slice(0,80);
-  const subject = {id:uid(),name,description:"Topics extracted locally from your syllabus. Review and edit the list as needed.",deadline:parseRoadmapDate(roadmapEnd.value)||"",color:"violet",items:topics.map(topic=>({id:uid(),kind:"topic",name:topic,details:"",phaseId:"",done:false})),sourceText:fallbackSyllabusText,planMode:"basic",roadmapStartDate:parseRoadmapDate(roadmapStart.value)||""};
+  const items=[];groups.forEach(group=>{const phaseId=uid();items.push({id:phaseId,kind:"phase",name:group.name,details:"",phaseId:"",done:false});group.topics.forEach(topic=>items.push({id:uid(),kind:"topic",name:topic,details:"",phaseId,done:false}))});
+  const subject = {id:uid(),name,description:"Topics extracted from the syllabus section of your handout.",deadline:parseRoadmapDate(roadmapEnd.value)||"",color:"violet",items,sourceText:fallbackSyllabusText,planMode:"basic",roadmapStartDate:parseRoadmapDate(roadmapStart.value)||""};
   state.subjects.push(subject);expandedSubjectIds.add(subject.id);save();closeDialog("#roadmapDialog");setView("subjects");showToast("Basic checklist created — you can convert it to an AI roadmap later.");
 }
 $("#makeFallbackChecklist").addEventListener("click", async()=>{
   const button=$("#makeFallbackChecklist");button.disabled=true;
-  try { setRoadmapStatus("Extracting readable syllabus text locally…"); await makeFallbackFromCurrentFile(); }
+  try { setRoadmapStatus("Finding the syllabus section and extracting its topics locally…"); await makeFallbackFromCurrentFile(); }
   catch(error){setRoadmapStatus(error.message,"error");}
   finally{button.disabled=false;}
 });

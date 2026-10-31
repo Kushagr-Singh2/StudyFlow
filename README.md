@@ -46,7 +46,7 @@ Copy `.env.example` to `.env` and add your Gemini API key to `GEMINI_API_KEY`. K
 
 ### Checklist and AI roadmap modes
 
-- **Generate study roadmap** is the primary flow. The API retries one temporary Gemini 502/503 failure with a short delay and returns clearer rate-limit/availability errors.
+- **Generate study roadmap** is the primary flow. The API tries the configured primary Gemini model (`GEMINI_MODEL`, default `gemini-3.8-flash`) and automatically falls back to `gemini-3.5-flash-lite` on temporary 502/503/504 capacity or timeout errors. The fallback gets one bounded retry. You can override it with `GEMINI_FALLBACK_MODEL`. Rate-limit errors (429) are reported separately.
 - **Basic checklist** lets students type topics or extract selectable text from a PDF locally in the browser. Scanned/image-only PDFs may need manual topic entry.
 - If AI roadmap generation fails for a PDF, students can create a basic checklist from locally extracted text. The source text is saved with that subject so they can choose **Convert to AI roadmap** later.
 - Existing `studyflow.v1` browser data remains compatible; new checklist metadata is additive.

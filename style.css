@@ -43,3 +43,5 @@
 #subjectDialog .basic-extract-preview li{margin:3px 0}
 #subjectDialog .basic-extract-preview span{display:block;color:#999caf;margin-top:5px}
 #subjectDialog #createBasicChecklistBtn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+#subjectDialog .basic-extract-preview .extract-group{margin-top:9px;padding-top:8px;border-top:1px solid var(--line)}
+#subjectDialog .basic-extract-preview .extract-group b{display:block;color:var(--ink);font-size:11px;margin-bottom:3px}

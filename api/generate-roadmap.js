@@ -75,28 +75,56 @@ Return a concise subject name, a useful description, and a summary explaining th
 
   try {
     const parts = hasFile ? [{ inlineData: { mimeType: file.mimeType, data: file.data } }, { text: prompt }] : [{ text: `${prompt}\n\nSYLLABUS TEXT (extracted locally from the user's PDF):\n${syllabusText}` }];
-    let response;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    const primaryModel = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+    const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash-lite";
+    const isTemporaryCapacityError = error => {
+      const status = Number(error?.status || error?.code || error?.response?.status || 0);
+      return status === 502 || status === 503 || status === 504 ||
+        /overloaded|high demand|temporarily unavailable|timed out/i.test(error?.message || "");
+    };
+    const requestModel = async (model, timeoutMs) => {
+      let timer;
       try {
-        response = await Promise.race([
+        return await Promise.race([
           ai.models.generateContent({
-            model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
+            model,
             contents: [{ role: "user", parts }],
             config: { responseMimeType: "application/json", responseSchema: roadmapSchema, temperature: 0.2 }
           }),
-          new Promise((_, reject) => setTimeout(() => reject(Object.assign(new Error("Gemini request timed out"), { status: 504 })), 24000))
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(Object.assign(new Error("Gemini request timed out"), { status: 504 })), timeoutMs);
+          })
         ]);
-        break;
-      } catch (error) {
-        const status = Number(error?.status || error?.code || error?.response?.status || 0);
-        const retryable = status === 503 || status === 502 || /overloaded|high demand|temporarily unavailable/i.test(error?.message || "");
-        if (attempt === 0 && retryable) {
-          console.warn("Gemini temporarily unavailable; retrying once.");
-          await new Promise(resolve => setTimeout(resolve, 1200));
-          continue;
-        }
-        throw error;
+      } finally {
+        if (timer) clearTimeout(timer);
       }
+    };
+
+    let response;
+    try {
+      response = await requestModel(primaryModel, 15000);
+    } catch (primaryError) {
+      if (!isTemporaryCapacityError(primaryError) || fallbackModel === primaryModel) throw primaryError;
+      console.warn(`Gemini primary model ${primaryModel} temporarily unavailable; trying fallback ${fallbackModel}.`);
+    }
+
+    if (!response && fallbackModel !== primaryModel) {
+      let fallbackError;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          response = await requestModel(fallbackModel, 18000);
+          break;
+        } catch (error) {
+          fallbackError = error;
+          if (attempt === 0 && isTemporaryCapacityError(error)) {
+            console.warn(`Gemini fallback model ${fallbackModel} temporarily unavailable; retrying once.`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+          }
+          throw error;
+        }
+      }
+      if (!response && fallbackError) throw fallbackError;
     }
     if (!response.text) return res.status(502).json({ error: "The AI service did not return a roadmap. Try a clearer or smaller syllabus." });
     const plan = JSON.parse(response.text);
