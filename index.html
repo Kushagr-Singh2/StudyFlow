@@ -142,35 +142,6 @@
           <button class="button primary" id="emptyGenerateRoadmap">✦ Generate my first roadmap</button>
           <button class="button ghost" id="emptyCreateChecklist">Create checklist from syllabus</button>
         </div>
-      </section>
-
-      <section class="view" id="subjectsView">
-        <div class="section-heading subject-page-heading">
-          <div><p class="eyebrow">YOUR COURSES</p><h2>Subjects & topics</h2><p class="muted">Build a checklist for every course, project or skill.</p></div>
-          <button class="button primary" id="subjectsGenerateRoadmap">✦ Generate roadmap</button> <button class="button ghost" id="subjectsCreateChecklist">＋ Checklist from syllabus</button>
-        </div>
-        <div id="allSubjects"></div>
-        <div id="emptySubjects" class="empty-state">
-          <div class="empty-icon">☷</div><h3>No subjects yet</h3><p>Create a subject and add your first phase or topic.</p>
-          <button class="button primary" id="emptyAddSubject2">＋ Create checklist from syllabus</button>
-        </div>
-      </section>
-
-      <section class="view" id="todayView">
-        <div class="focus-intro"><p class="eyebrow">ONE THING AT A TIME</p><h2>Today's focus</h2><p class="muted">Pick a few topics to work on today. Your checklists remain attached to their subjects.</p></div>
-        <div class="focus-layout">
-          <div class="panel">
-            <div class="panel-heading"><div><h3>Choose your focus</h3><p class="muted">Select topics to add them to today's list.</p></div></div>
-            <div id="focusPicker"></div>
-          </div>
-          <div class="panel today-panel">
-            <div class="panel-heading"><div><h3>My session</h3><p class="muted" id="focusDate"></p></div><button class="text-button" id="clearFocus">Clear</button></div>
-            <div id="todayList"></div>
-            <div class="focus-note"><label for="sessionNote">Session notes</label><textarea id="sessionNote" placeholder="What did you learn? What should you revisit?"></textarea></div>
-          </div>
-        </div>
-      </section>
-
       <section class="seo-intro" aria-labelledby="seoIntroTitle">
         <div class="section-heading">
           <div>
@@ -205,6 +176,35 @@
           and you can export a backup to keep a copy of your work.
         </p>
       </section>
+
+      </section>
+
+      <section class="view" id="subjectsView">
+        <div class="section-heading subject-page-heading">
+          <div><p class="eyebrow">YOUR COURSES</p><h2>Subjects & topics</h2><p class="muted">Build a checklist for every course, project or skill.</p></div>
+        </div>
+        <div id="allSubjects"></div>
+        <div id="emptySubjects" class="empty-state">
+          <div class="empty-icon">☷</div><h3>No subjects yet</h3><p>Create a subject and add your first phase or topic.</p>
+          <button class="button primary" id="emptyAddSubject2">＋ Create checklist from syllabus</button>
+        </div>
+      </section>
+
+      <section class="view" id="todayView">
+        <div class="focus-intro"><p class="eyebrow">ONE THING AT A TIME</p><h2>Today's focus</h2><p class="muted">Pick a few topics to work on today. Your checklists remain attached to their subjects.</p></div>
+        <div class="focus-layout">
+          <div class="panel">
+            <div class="panel-heading"><div><h3>Choose your focus</h3><p class="muted">Select topics to add them to today's list.</p></div></div>
+            <div id="focusPicker"></div>
+          </div>
+          <div class="panel today-panel">
+            <div class="panel-heading"><div><h3>My session</h3><p class="muted" id="focusDate"></p></div><button class="text-button" id="clearFocus">Clear</button></div>
+            <div id="todayList"></div>
+            <div class="focus-note"><label for="sessionNote">Session notes</label><textarea id="sessionNote" placeholder="What did you learn? What should you revisit?"></textarea></div>
+          </div>
+        </div>
+      </section>
+
 
       <footer><span>SemReady</span><span>Your semester, one topic at a time.</span><nav class="legal-links" aria-label="Legal"><a href="/terms.html">Terms &amp; Conditions</a><a href="/privacy.html">Privacy Policy</a></nav></footer>
     </main>
